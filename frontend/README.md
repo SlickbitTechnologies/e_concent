@@ -1,73 +1,88 @@
-# Welcome to your Lovable project
+# E‑Consent Frontend (React + Vite)
 
-## Project info
+A patient-facing React application for clinical trial e‑consent. It includes trial info pages, an interactive consent form, and an AI chatbot that explains content and assists with conversational form filling.
 
-**URL**: https://lovable.dev/projects/7c35252a-c5be-4b8c-bf2c-9215ea141e12
+## Tech Stack
+- React 18 + Vite
+- Tailwind CSS + shadcn/ui
+- React Router DOM
+- TanStack React Query
+- Lucide React icons
 
-## How can I edit this code?
+## Prerequisites
+- Node.js 18+ and npm
+- Backend running at http://localhost:8000 (see backend/README.md)
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/7c35252a-c5be-4b8c-bf2c-9215ea141e12) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## Quick Start
+```bash
+# From the project root
+cd frontend
+npm install
 npm run dev
+# Open http://localhost:8081
 ```
 
-**Edit a file directly in GitHub**
+### Build & Preview
+```bash
+npm run build
+npm run preview
+# Open the printed URL
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Dev Server Proxy
+The dev server proxies API calls to the backend.
 
-**Use GitHub Codespaces**
+File: `frontend/vite.config.ts`
+```ts
+export default defineConfig({
+  server: {
+    host: "::",
+    port: 8081,
+    proxy: {
+      "/api": "http://localhost:8000",
+      "/functions/v1": "http://localhost:8000",
+    },
+  },
+  // ...
+});
+```
+Make sure the backend is listening on port 8000.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## App Structure
+- `src/pages/TrialInfo.jsx`: Trial information page with the AI assistant
+- `src/pages/ConsentForm.jsx`: Consent form with chatbot-driven explanations and auto-fill
+- `src/pages/Auth.jsx`: Login/Register (stubbed for now)
+- `src/components/Chatbot.jsx`: Chat UI and voice in/out, integrates with backend
+- `src/components/ui/*`: Reusable UI components
 
-## What technologies are used for this project?
+## Chatbot Integration
+The chatbot talks to the backend for all responses and TTS.
 
-This project is built with:
+- Send messages to: `POST /api/chat/text`
+- Text-to-speech: `POST /functions/v1/text-to-speech`
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Example request payload sent by the chatbot:
+```json
+{
+  "message": "Explain risks",
+  "context": "trial", // or "form"
+  "infoText": "Optional page content to ground the answer",
+  "fields": [
+    { "key": "firstName", "label": "First Name", "help": "Your given name." }
+  ]
+}
+```
 
-## How can I deploy this project?
+When the backend returns `fieldsPatch`, the form is auto‑updated:
+```json
+{
+  "reply": "Updated fields: firstName",
+  "fieldsPatch": { "firstName": "John" }
+}
+```
 
-Simply open [Lovable](https://lovable.dev/projects/7c35252a-c5be-4b8c-bf2c-9215ea141e12) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Troubleshooting
+- Chatbot not responding: ensure the backend is running and reachable at `http://localhost:8000`
+- 404 on `/api/chat/text`: make sure backend exposes that path (see backend README)
+- TTS 503/500: missing or invalid ElevenLabs API key; the UI will fall back to browser SpeechSynthesis
+- CORS errors: confirm `CORS_ORIGINS` in backend `.env` includes `http://localhost:8081`
