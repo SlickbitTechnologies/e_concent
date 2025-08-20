@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Chatbot from "@/components/Chatbot";
+import Header from "@/components/Header";
 
 const ConsentForm = () => {
   const navigate = useNavigate();
@@ -153,36 +154,13 @@ const ConsentForm = () => {
 
   const handleBackToEdit = () => setShowPreview(false);
 
-  const consentFormText = `\n    Welcome to the NeuroSAFE PROOF Clinical Trial consent form...\n  `;
-
-
+  const consentFormText = `
+    Welcome to the NeuroSAFE PROOF Clinical Trial consent form...
+  `;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-primary-foreground/10 rounded-lg flex items-center justify-center">
-              <div className="text-primary-foreground font-bold text-sm">NEUROSAFE<br />PROOF</div>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">NeuroSAFE PROOF Clinical Trial</h1>
-              <p className="text-primary-foreground/80">Consent Form</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" onClick={() => navigate('/trial-info')} className="text-primary-foreground hover:bg-primary-foreground/20">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Trial Info
-            </Button>
-            <Button variant="secondary" onClick={() => navigate('/home')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
+      <Header />
 
       <div className="container mx-auto p-6">
         {showPreview ? (

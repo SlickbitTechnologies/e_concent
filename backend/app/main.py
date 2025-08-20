@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .settings import settings
 from .routers import chat, tts
+from .routers import consents
 
 
 app = FastAPI(title="E-Consent Backend", version="1.0.0")
@@ -24,5 +25,6 @@ def health():
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 app.include_router(tts.router, prefix="/api", tags=["tts"])      # optional duplicate
 app.include_router(tts.router, prefix="/functions/v1", tags=["functions"])  # for frontend
+app.include_router(consents.router, prefix="/api", tags=["consents"])
 
 

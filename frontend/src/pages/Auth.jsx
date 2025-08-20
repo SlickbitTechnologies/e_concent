@@ -6,32 +6,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+
+// Firebase config from Vite env (define these in frontend/.env.local)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const firebaseAuth = getAuth(firebaseApp);
+const googleProvider = new GoogleAuthProvider();
 
 const Auth = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const result = await signInWithPopup(firebaseAuth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      localStorage.setItem('token', idToken);
+      localStorage.setItem('userEmail', result.user.email || '');
+      localStorage.setItem('userName', result.user.displayName || (result.user.email ? result.user.email.split('@')[0] : ''));
+      navigate('/home');
+    } catch (err) {
+      alert('Google sign-in failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e, type) => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      // Dummy auth: read form values but do not call any backend
       const form = new FormData(e.target);
       const payload = type === 'login'
         ? { email: form.get('email'), password: form.get('password') }
         : { firstName: form.get('firstName'), lastName: form.get('lastName'), email: form.get('registerEmail'), password: form.get('registerPassword') };
-      const endpoint = type === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error('Auth failed');
-      const data = await res.json();
-      localStorage.setItem('token', data.access_token);
+
+      await new Promise((r) => setTimeout(r, 400));
+
+      const nameFromForm = (payload.firstName || payload.lastName) ? `${payload.firstName || ''} ${payload.lastName || ''}`.trim() : '';
+      const derivedName = nameFromForm || (payload.email ? String(payload.email).split('@')[0] : 'User');
+
+      localStorage.setItem('token', 'dummy-token');
+      localStorage.setItem('userEmail', payload.email || 'user@example.com');
+      localStorage.setItem('userName', derivedName);
       navigate('/home');
     } catch (err) {
-      alert('Authentication failed. Please try again.');
+      alert('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -56,6 +89,12 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="space-y-3 mb-4">
+              <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+                Continue with Google
+              </Button>
+            </div>
+
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Sign In</TabsTrigger>

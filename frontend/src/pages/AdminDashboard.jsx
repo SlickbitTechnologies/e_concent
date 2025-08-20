@@ -1,26 +1,12 @@
-import { Shield, Users, BarChart, FileText, Settings, Bell } from "lucide-react";
+import { Users, BarChart, FileText, Settings, Bell, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Header from "@/components/Header";
 
 const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-background border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-                <Shield className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Clinical Trial Management</p>
-              </div>
-            </div>
-            <Button variant="ghost" onClick={() => (window.location.href = '/')}>Back to Home</Button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-4 gap-6 mb-8">
