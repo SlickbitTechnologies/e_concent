@@ -36,6 +36,10 @@ const TrialInfo = () => {
   - Benefits: This treatment may improve blood sugar control and contribute to 
     advancing diabetes care, though personal benefit is not guaranteed
   - Contact: The research team is available anytime to answer your questions
+  - Contact details for the trial's conducting members:
+    - email: (trials@gmail.com)
+    - phone: (9542757209)
+    - address: (Hyderabad, India  )
 
   All trial activities follow strict safety protocols, and doctors will 
   closely monitor your health throughout participation.
