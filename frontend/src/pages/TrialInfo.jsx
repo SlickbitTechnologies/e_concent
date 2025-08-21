@@ -15,20 +15,31 @@ const TrialInfo = () => {
   const [acknowledged, setAcknowledged] = useState(false);
 
   const infoText = `
-    NeuroSAFE PROOF Clinical Trial Information:
-    
-    This is a Phase III clinical trial evaluating innovative robotic-assisted radical prostatectomy vs standard robotic assisted radical prostatectomy in men with prostate cancer.
-    
-    Key Points:
-    - Purpose: Test new treatment safety and effectiveness
-    - Voluntary: You can leave at any time
-    - Confidential: Your information stays private
-    - Risks: Tiredness, mild fever, injection site pain (serious effects rare)
-    - Benefits: May help future patients, personal benefit not guaranteed
-    - Contact: Research team available for questions
-    
-    The trial involves visits, tests, and possible trial medicine or placebo. All procedures follow strict safety protocols.
-  `;
+  You are invited to participate in a Phase II clinical trial 
+  studying an innovative treatment for diabetes.
+
+  Drug Information:
+  - Investigational Drug: "Glucora" (a new GLP-1 receptor agonist)
+  - How it works: Helps regulate blood sugar by increasing insulin release 
+    and reducing glucose production in the liver
+  - Form: Subcutaneous injection, once weekly
+  - Status: Approved for testing in earlier Phase I trials with promising safety results
+
+  Trial Details:
+  - Purpose: To evaluate the safety, tolerability, and effectiveness of Glucora 
+    compared to a placebo
+  - Duration: (12-18) months, including regular visits, blood tests, and health monitoring
+  - Voluntary: You may withdraw at any point without affecting your medical care
+  - Confidential: All your medical records and personal details will remain private
+  - Risks: Possible side effects may include tiredness, mild fever, nausea, or 
+    injection site discomfort (serious effects are rare but monitored)
+  - Benefits: This treatment may improve blood sugar control and contribute to 
+    advancing diabetes care, though personal benefit is not guaranteed
+  - Contact: The research team is available anytime to answer your questions
+
+  All trial activities follow strict safety protocols, and doctors will 
+  closely monitor your health throughout participation.
+`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,7 +72,7 @@ const TrialInfo = () => {
           </div>
           <div className="mt-4">
             <h2 className="text-lg font-semibold">Trial Overview</h2>
-            <p className="mt-2 text-muted-foreground">Phase III Efficacy Study of Novel Cardioprotective Agent</p>
+            <p className="mt-2 text-muted-foreground">Phase II Efficacy Study of Novel Cardioprotective Agent</p>
             <p className="mt-2 text-muted-foreground">A randomized, double-blind, placebo-controlled study evaluating the efficacy and safety of XYZ-123 in patients with chronic heart failure.</p>
           </div>
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -70,7 +81,7 @@ const TrialInfo = () => {
                 <div className="mt-1 text-blue-600 dark:text-blue-300"><CalendarDays className="h-5 w-5" /></div>
                 <div>
                   <div className="font-semibold">Duration</div>
-                  <div className="text-muted-foreground">24 months</div>
+                  <div className="text-muted-foreground">(12-18) months</div>
                 </div>
               </CardContent>
             </Card>
@@ -79,7 +90,7 @@ const TrialInfo = () => {
                 <div className="mt-1 text-emerald-600 dark:text-emerald-300"><FlaskConical className="h-5 w-5" /></div>
                 <div>
                   <div className="font-semibold">Phase</div>
-                  <div className="text-muted-foreground">Phase III</div>
+                  <div className="text-muted-foreground">Phase II</div>
                 </div>
               </CardContent>
             </Card>
@@ -88,7 +99,7 @@ const TrialInfo = () => {
                 <div className="mt-1 text-green-600 dark:text-green-300"><Building2 className="h-5 w-5" /></div>
                 <div>
                   <div className="font-semibold">Sponsor</div>
-                  <div className="text-muted-foreground">CardioMed Research Institute</div>
+                  <div className="text-muted-foreground">(sponsor name)</div>
                 </div>
               </CardContent>
             </Card>
@@ -97,7 +108,7 @@ const TrialInfo = () => {
                 <div className="mt-1 text-violet-600 dark:text-violet-300"><UserCircle2 className="h-5 w-5" /></div>
                 <div>
                   <div className="font-semibold">Principal Investigator</div>
-                  <div className="text-muted-foreground">Dr. Sarah Johnson, MD, PhD</div>
+                  <div className="text-muted-foreground">(principal investigator name)</div>
                 </div>
               </CardContent>
             </Card>
@@ -107,7 +118,7 @@ const TrialInfo = () => {
               <div className="mt-1 text-slate-600 dark:text-slate-300"><MapPin className="h-5 w-5" /></div>
               <div>
                 <div className="font-semibold">Location</div>
-                <div className="text-muted-foreground">Metropolitan Medical Center, Clinical Research Unit</div>
+                <div className="text-muted-foreground">( location to be added)</div>
               </div>
             </CardContent>
           </Card>
