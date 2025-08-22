@@ -184,7 +184,7 @@ const Chatbot = ({
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full animate-ping"></div>
           </Button>
         ) : (
-          <Card className="w-96 h-[500px] shadow-2xl border-0 overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/20 backdrop-blur-sm">
+          <Card className="w-96 h-[700px] shadow-2xl border-0 overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/20 backdrop-blur-sm" style={{marginBottom: '50px'}}>
             <CardHeader className="bg-gradient-to-r from-slate-700 via-blue-700 to-indigo-700 text-white p-4 shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -218,7 +218,7 @@ const Chatbot = ({
               </div>
             </CardHeader>
             
-            <div className="flex flex-col h-[calc(550px-120px)]">
+            <div className="flex flex-col h-[calc(750px-120px)]">
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
                   {chatMessages.map((message, index) => (
