@@ -12,6 +12,7 @@ import ConsentForm from "./pages/ConsentForm";
 import SubmissionSuccess from "./pages/SubmissionSuccess";
 import NotFound from "./pages/NotFound";
 import TrialInfo from "./pages/TrialInfo";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -20,16 +21,40 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true }}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/patient-dashboard" element={<PatientDashboard />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/trial-info" element={<TrialInfo />} />
-          <Route path="/consent-form" element={<ConsentForm />} />
-          <Route path="/submission-success" element={<SubmissionSuccess />} />
+          <Route path="/home" element={
+            <ProtectedRoute allowedRoles={['participant']}>
+              <Home />
+            </ProtectedRoute>
+          } />
+          <Route path="/patient-dashboard" element={
+            <ProtectedRoute allowedRoles={['participant']}>
+              <PatientDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-dashboard" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/trial-info" element={
+            <ProtectedRoute allowedRoles={['participant']}>
+              <TrialInfo />
+            </ProtectedRoute>
+          } />
+          <Route path="/consent-form" element={
+            <ProtectedRoute allowedRoles={['participant']}>
+              <ConsentForm />
+            </ProtectedRoute>
+          } />
+          <Route path="/submission-success" element={
+            <ProtectedRoute allowedRoles={['participant']}>
+              <SubmissionSuccess />
+            </ProtectedRoute>
+          } />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

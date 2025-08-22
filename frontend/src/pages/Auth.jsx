@@ -27,6 +27,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("participant");
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -36,7 +37,17 @@ const Auth = () => {
       localStorage.setItem('token', idToken);
       localStorage.setItem('userEmail', result.user.email || '');
       localStorage.setItem('userName', result.user.displayName || (result.user.email ? result.user.email.split('@')[0] : ''));
-      navigate('/home');
+      
+      // Set role based on currently active tab
+      const role = activeTab === 'admin' ? 'admin' : 'participant';
+      localStorage.setItem('userRole', role);
+      
+      // Navigate based on role
+      if (role === 'admin') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/home');
+      }
     } catch (err) {
       alert('Google sign-in failed. Please try again.');
     } finally {
@@ -50,19 +61,31 @@ const Auth = () => {
     try {
       // Dummy auth: read form values but do not call any backend
       const form = new FormData(e.target);
-      const payload = type === 'login'
-        ? { email: form.get('email'), password: form.get('password') }
-        : { firstName: form.get('firstName'), lastName: form.get('lastName'), email: form.get('registerEmail'), password: form.get('registerPassword') };
+      let payload;
+      
+      if (type === 'participant') {
+        payload = { email: form.get('email'), password: form.get('password') };
+      } else if (type === 'admin') {
+        payload = { email: form.get('adminEmail'), password: form.get('adminPassword') };
+      } else if (type === 'register') {
+        payload = { firstName: form.get('firstName'), lastName: form.get('lastName'), email: form.get('registerEmail'), password: form.get('registerPassword') };
+      }
 
       await new Promise((r) => setTimeout(r, 400));
 
-      const nameFromForm = (payload.firstName || payload.lastName) ? `${payload.firstName || ''} ${payload.lastName || ''}`.trim() : '';
-      const derivedName = nameFromForm || (payload.email ? String(payload.email).split('@')[0] : 'User');
-
+      // Dummy success: set localStorage and navigate
+      const derivedName = payload.firstName ? `${payload.firstName} ${payload.lastName}` : (payload.email ? payload.email.split('@')[0] : 'User');
       localStorage.setItem('token', 'dummy-token');
       localStorage.setItem('userEmail', payload.email || 'user@example.com');
       localStorage.setItem('userName', derivedName);
-      navigate('/home');
+      localStorage.setItem('userRole', type === 'admin' ? 'admin' : 'participant');
+
+      // Navigate based on user role
+      if (type === 'admin') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/home');
+      }
     } catch (err) {
       alert('Something went wrong. Please try again.');
     } finally {
@@ -91,18 +114,19 @@ const Auth = () => {
           <CardContent>
             <div className="space-y-3 mb-4">
               <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-                Continue with Google
+                Continue with Google {activeTab === 'admin' ? '(Admin/CRO)' : '(Participant)'}
               </Button>
             </div>
 
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
+            <Tabs defaultValue="participant" className="w-full" onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="participant">Participant</TabsTrigger>
+                <TabsTrigger value="admin">Admin/CRO</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="login">
-                <form onSubmit={(e) => handleSubmit(e, 'login')} className="space-y-4">
+              <TabsContent value="participant">
+                <form onSubmit={(e) => handleSubmit(e, 'participant')} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" name="email" type="email" placeholder="Enter your email" required />
@@ -119,7 +143,35 @@ const Auth = () => {
                   </div>
 
                   <Button type="submit" variant="medical" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {isLoading ? "Signing in..." : "Sign In as Participant"}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="admin">
+                <form onSubmit={(e) => handleSubmit(e, 'admin')} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="adminEmail">Admin Email</Label>
+                    <Input id="adminEmail" name="adminEmail" type="email" placeholder="Enter admin email" required />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="adminPassword">Admin Password</Label>
+                    <div className="relative">
+                      <Input id="adminPassword" name="adminPassword" type={showPassword ? "text" : "password"} placeholder="Enter admin password" required />
+                      <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-muted-foreground bg-primary-light p-3 rounded-lg">
+                    <Shield className="w-4 h-4 inline mr-1" />
+                    Admin access for Clinical Research Organizations (CRO) to review participant applications
+                  </div>
+
+                  <Button type="submit" variant="medical" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Sign In as Admin/CRO"}
                   </Button>
                 </form>
               </TabsContent>

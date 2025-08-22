@@ -1,21 +1,30 @@
-// Converted from TSX to JSX; functionality preserved
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Chatbot from "@/components/Chatbot";
-import Header from "@/components/Header";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Check, Lock } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Checkbox } from '../components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import Header from '../components/Header';
+import SectionHeader from '../components/SectionHeader';
+import Chatbot from '../components/Chatbot';
+import { consentFormText, fields } from '../data/consentFormData';
 
 const ConsentForm = () => {
   const navigate = useNavigate();
   const [activeField, setActiveField] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [completedSections, setCompletedSections] = useState({
+    section1: false,
+    section2: false,
+    section3: false,
+    section4: false,
+    section5: false,
+    section6: false
+  });
 
   const [formData, setFormData] = useState({
     // Personal Information
@@ -121,18 +130,82 @@ const ConsentForm = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Section validation functions
+  const validateSection1 = () => {
+    const required = ['firstName', 'lastName', 'email', 'dateOfBirth', 'age', 'sex', 'phoneNumber', 'address'];
+    return required.every(field => formData[field] && formData[field].trim() !== '');
+  };
+
+  const validateSection2 = () => {
+    const required = ['emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelationship'];
+    return required.every(field => formData[field] && formData[field].trim() !== '');
+  };
+
+  const validateSection3 = () => {
+    // Medical information is optional but at least one field should be filled
+    return formData.healthConditions || formData.allergies || formData.currentMedications || formData.lastTetanusShot;
+  };
+
+  const validateSection4 = () => {
+    // Medical care information is optional but at least one field should be filled
+    return formData.physicianName || formData.dentistName || formData.preferredHospital || formData.insuranceProvider;
+  };
+
+  const validateSection5 = () => {
+    // At least one authorization should be checked
+    return formData.emergencyMedicalCare || formData.surgery || formData.bloodTransfusions || formData.dentalTreatment || formData.other;
+  };
+
+  const validateSection6 = () => {
+    const required = ['signature', 'isUCLAPatient', 'hospital'];
+    const requiredFilled = required.every(field => formData[field] && formData[field].trim() !== '');
+    const consentChecked = formData.hasReceivedInfo && formData.consentConsent1;
+    return requiredFilled && consentChecked;
+  };
+
+  const handleSectionComplete = (sectionNumber) => {
+    let isValid = false;
+    
+    switch(sectionNumber) {
+      case 1: isValid = validateSection1(); break;
+      case 2: isValid = validateSection2(); break;
+      case 3: isValid = validateSection3(); break;
+      case 4: isValid = validateSection4(); break;
+      case 5: isValid = validateSection5(); break;
+      case 6: isValid = validateSection6(); break;
+    }
+
+    if (isValid) {
+      setCompletedSections(prev => ({
+        ...prev,
+        [`section${sectionNumber}`]: true
+      }));
+    } else {
+      alert(`Please complete all required fields in Section ${sectionNumber} before marking it as complete.`);
+    }
+  };
+
+  const isSectionEnabled = (sectionNumber) => {
+    if (sectionNumber === 1) return true;
+    return completedSections[`section${sectionNumber - 1}`];
+  };
+
+  const getSectionStatus = (sectionNumber) => {
+    if (completedSections[`section${sectionNumber}`]) return 'completed';
+    if (isSectionEnabled(sectionNumber)) return 'enabled';
+    return 'disabled';
+  };
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    const requiredFields = ['firstName','lastName','email','dateOfBirth','age','phoneNumber','address','emergencyContactName','emergencyContactPhone','emergencyContactRelationship','signature','isUCLAPatient','hospital'];
-    const missingFields = requiredFields.filter((field) => !formData[field]);
-    if (missingFields.length > 0) {
-      alert(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+    
+    // Check if all sections are completed
+    const allSectionsCompleted = Object.values(completedSections).every(completed => completed);
+    if (!allSectionsCompleted) {
+      alert('Please complete all sections before submitting the form.');
       return;
     }
-    if (!formData.hasReceivedInfo || !formData.consentConsent1) {
-      alert('Please confirm that you have received information about the trial and consent to participate.');
-      return;
-    }
+    
     setShowPreview(true);
   };
 
@@ -303,188 +376,214 @@ const ConsentForm = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                   {/* Section 1: Basic Information */}
-                  <Card>
-                    <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
-                      <CardTitle className="text-blue-800 dark:text-blue-200 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
-                        Basic Information
-                      </CardTitle>
-                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">Please provide your basic contact information.</p>
-                    </CardHeader>
+                  <Card className={`${getSectionStatus(1) === 'disabled' ? 'opacity-50' : ''}`}>
+                    <SectionHeader
+                      sectionNumber={1}
+                      title="Basic Information"
+                      description="Please provide your basic personal information. All fields marked with * are required."
+                      status={getSectionStatus(1)}
+                      onMarkComplete={() => handleSectionComplete(1)}
+                      isCompleted={completedSections.section1}
+                      colorScheme="blue"
+                    />
                     <CardContent className="space-y-4 pt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label htmlFor="firstName">First Name *</Label><Input id="firstName" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} required /></div>
-                        <div className="space-y-2"><Label htmlFor="lastName">Last Name *</Label><Input id="lastName" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} required /></div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label htmlFor="dateOfBirth">Date of Birth *</Label><Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={(e) => handleInputChange('dateOfBirth', e.target.value)} required /></div>
-                        <div className="space-y-2"><Label htmlFor="age">Age *</Label><Input id="age" type="number" value={formData.age} onChange={(e) => handleInputChange('age', e.target.value)} required /></div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="sex">Sex *</Label>
-                          <Select value={formData.sex} onValueChange={(value) => handleInputChange('sex', value)}>
-                            <SelectTrigger><SelectValue placeholder="Select sex" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      <fieldset disabled={getSectionStatus(1) === 'disabled'}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2"><Label htmlFor="firstName">First Name *</Label><Input id="firstName" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} required /></div>
+                          <div className="space-y-2"><Label htmlFor="lastName">Last Name *</Label><Input id="lastName" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} required /></div>
                         </div>
-                        <div className="space-y-2"><Label htmlFor="phoneNumber">Phone Number *</Label><Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={(e) => handleInputChange('phoneNumber', e.target.value)} required /></div>
-                      </div>
-                      <div className="space-y-2"><Label htmlFor="email">Email Address *</Label><Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} required /></div>
-                      <div className="space-y-2"><Label htmlFor="address">Home Address *</Label><Textarea id="address" value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} required /></div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2"><Label htmlFor="dateOfBirth">Date of Birth *</Label><Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={(e) => handleInputChange('dateOfBirth', e.target.value)} required /></div>
+                          <div className="space-y-2"><Label htmlFor="age">Age *</Label><Input id="age" type="number" value={formData.age} onChange={(e) => handleInputChange('age', e.target.value)} required /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="sex">Sex *</Label>
+                            <Select value={formData.sex} onValueChange={(value) => handleInputChange('sex', value)}>
+                              <SelectTrigger><SelectValue placeholder="Select sex" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="male">Male</SelectItem>
+                                <SelectItem value="female">Female</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2"><Label htmlFor="phoneNumber">Phone Number *</Label><Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={(e) => handleInputChange('phoneNumber', e.target.value)} required /></div>
+                        </div>
+                        <div className="space-y-2"><Label htmlFor="email">Email Address *</Label><Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} required /></div>
+                        <div className="space-y-2"><Label htmlFor="address">Home Address *</Label><Textarea id="address" value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} required /></div>
+                      </fieldset>
                     </CardContent>
                   </Card>
 
                   {/* Section 2: Emergency Contact */}
-                  <Card>
-                    <CardHeader className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20">
-                      <CardTitle className="text-red-800 dark:text-red-200 flex items-center gap-2"><div className="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>Emergency Contact</CardTitle>
-                      <p className="text-sm text-red-700 dark:text-red-300 mt-2">Please provide emergency contact details.</p>
-                    </CardHeader>
+                  <Card className={`${getSectionStatus(2) === 'disabled' ? 'opacity-50' : ''}`}>
+                    <SectionHeader
+                      sectionNumber={2}
+                      title="Emergency Contact"
+                      description="Please provide emergency contact information. This person will be contacted in case of any medical emergency during the trial."
+                      status={getSectionStatus(2)}
+                      onMarkComplete={() => handleSectionComplete(2)}
+                      isCompleted={completedSections.section2}
+                      colorScheme="green"
+                    />
                     <CardContent className="space-y-4 pt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label htmlFor="emergencyContactName">Emergency Contact Name *</Label><Input id="emergencyContactName" value={formData.emergencyContactName} onChange={(e) => handleInputChange('emergencyContactName', e.target.value)} required /></div>
-                        <div className="space-y-2"><Label htmlFor="emergencyContactPhone">Emergency Contact Phone *</Label><Input id="emergencyContactPhone" type="tel" value={formData.emergencyContactPhone} onChange={(e) => handleInputChange('emergencyContactPhone', e.target.value)} required /></div>
-                      </div>
-                      <div className="space-y-2"><Label htmlFor="emergencyContactRelationship">Relationship to You *</Label><Input id="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={(e) => handleInputChange('emergencyContactRelationship', e.target.value)} required /></div>
+                      <fieldset disabled={getSectionStatus(2) === 'disabled'}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2"><Label htmlFor="emergencyContactName">Emergency Contact Name *</Label><Input id="emergencyContactName" value={formData.emergencyContactName} onChange={(e) => handleInputChange('emergencyContactName', e.target.value)} required /></div>
+                          <div className="space-y-2"><Label htmlFor="emergencyContactPhone">Emergency Contact Phone *</Label><Input id="emergencyContactPhone" type="tel" value={formData.emergencyContactPhone} onChange={(e) => handleInputChange('emergencyContactPhone', e.target.value)} required /></div>
+                        </div>
+                        <div className="space-y-2"><Label htmlFor="emergencyContactRelationship">Relationship to You *</Label><Input id="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={(e) => handleInputChange('emergencyContactRelationship', e.target.value)} required /></div>
+                      </fieldset>
                     </CardContent>
                   </Card>
 
                   {/* Section 3: Medical Information */}
-                  <Card>
-                    <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
-                      <CardTitle className="text-green-800 dark:text-green-200 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
-                        Medical Information
-                      </CardTitle>
-                      <p className="text-sm text-green-700 dark:text-green-300 mt-2">Medical history is crucial for ensuring your safety during the trial. Please provide accurate information about your health conditions and medications.</p>
-                    </CardHeader>
+                  <Card className={`${getSectionStatus(3) === 'disabled' ? 'opacity-50' : ''}`}>
+                    <SectionHeader
+                      sectionNumber={3}
+                      title="Medical Information"
+                      description="Medical history is crucial for ensuring your safety during the trial. Please provide accurate information about your health conditions and medications."
+                      status={getSectionStatus(3)}
+                      onMarkComplete={() => handleSectionComplete(3)}
+                      isCompleted={completedSections.section3}
+                      colorScheme="green"
+                    />
                     <CardContent className="space-y-4 pt-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="healthConditions">Current Health Conditions</Label>
-                        <Textarea id="healthConditions" value={formData.healthConditions} onChange={(e) => handleInputChange('healthConditions', e.target.value)} placeholder="List any current health conditions, diseases, or ongoing medical issues" rows={3} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="allergies">Allergies</Label>
-                        <Textarea id="allergies" value={formData.allergies} onChange={(e) => handleInputChange('allergies', e.target.value)} placeholder="List any known allergies (medications, foods, environmental)" rows={2} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="currentMedications">Current Medications</Label>
-                        <Textarea id="currentMedications" value={formData.currentMedications} onChange={(e) => handleInputChange('currentMedications', e.target.value)} placeholder="List all current medications including dosages" rows={3} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastTetanusShot">Last Tetanus Shot</Label>
-                        <Input id="lastTetanusShot" type="date" value={formData.lastTetanusShot} onChange={(e) => handleInputChange('lastTetanusShot', e.target.value)} placeholder="Date of last tetanus vaccination" />
-                      </div>
+                      <fieldset disabled={getSectionStatus(3) === 'disabled'}>
+                        <div className="space-y-2">
+                          <Label htmlFor="healthConditions">Current Health Conditions</Label>
+                          <Textarea id="healthConditions" value={formData.healthConditions} onChange={(e) => handleInputChange('healthConditions', e.target.value)} placeholder="List any current health conditions, diseases, or ongoing medical issues" rows={3} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="allergies">Allergies</Label>
+                          <Textarea id="allergies" value={formData.allergies} onChange={(e) => handleInputChange('allergies', e.target.value)} placeholder="List any known allergies (medications, foods, environmental)" rows={2} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="currentMedications">Current Medications</Label>
+                          <Textarea id="currentMedications" value={formData.currentMedications} onChange={(e) => handleInputChange('currentMedications', e.target.value)} placeholder="List all current medications including dosages" rows={3} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastTetanusShot">Last Tetanus Shot</Label>
+                          <Input id="lastTetanusShot" type="date" value={formData.lastTetanusShot} onChange={(e) => handleInputChange('lastTetanusShot', e.target.value)} placeholder="Date of last tetanus vaccination" />
+                        </div>
+                      </fieldset>
                     </CardContent>
                   </Card>
 
                   {/* Section 4: Medical Care Information */}
-                  <Card>
-                    <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
-                      <CardTitle className="text-purple-800 dark:text-purple-200 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
-                        Medical Care Information
-                      </CardTitle>
-                      <p className="text-sm text-purple-700 dark:text-purple-300 mt-2">Your healthcare provider details and insurance information help us coordinate your care during the trial.</p>
-                    </CardHeader>
+                  <Card className={`${getSectionStatus(4) === 'disabled' ? 'opacity-50' : ''}`}>
+                    <SectionHeader
+                      sectionNumber={4}
+                      title="Medical Care Information"
+                      description="Your healthcare provider details and insurance information help us coordinate your care during the trial."
+                      status={getSectionStatus(4)}
+                      onMarkComplete={() => handleSectionComplete(4)}
+                      isCompleted={completedSections.section4}
+                      colorScheme="purple"
+                    />
                     <CardContent className="space-y-4 pt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="physicianName">Primary Physician Name</Label>
-                          <Input id="physicianName" value={formData.physicianName} onChange={(e) => handleInputChange('physicianName', e.target.value)} placeholder="Your primary care physician" />
+                      <fieldset disabled={getSectionStatus(4) === 'disabled'}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="physicianName">Primary Physician Name</Label>
+                            <Input id="physicianName" value={formData.physicianName} onChange={(e) => handleInputChange('physicianName', e.target.value)} placeholder="Your primary care physician" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="physicianPhone">Physician Phone</Label>
+                            <Input id="physicianPhone" type="tel" value={formData.physicianPhone} onChange={(e) => handleInputChange('physicianPhone', e.target.value)} placeholder="Physician's phone number" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="dentistName">Dentist Name</Label>
+                            <Input id="dentistName" value={formData.dentistName} onChange={(e) => handleInputChange('dentistName', e.target.value)} placeholder="Your dentist's name" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="dentistPhone">Dentist Phone</Label>
+                            <Input id="dentistPhone" type="tel" value={formData.dentistPhone} onChange={(e) => handleInputChange('dentistPhone', e.target.value)} placeholder="Dentist's phone number" />
+                          </div>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="physicianPhone">Physician Phone</Label>
-                          <Input id="physicianPhone" type="tel" value={formData.physicianPhone} onChange={(e) => handleInputChange('physicianPhone', e.target.value)} placeholder="Physician's phone number" />
+                          <Label htmlFor="preferredHospital">Preferred Hospital</Label>
+                          <Input id="preferredHospital" value={formData.preferredHospital} onChange={(e) => handleInputChange('preferredHospital', e.target.value)} placeholder="Your preferred hospital for emergency care" />
                         </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="dentistName">Dentist Name</Label>
-                          <Input id="dentistName" value={formData.dentistName} onChange={(e) => handleInputChange('dentistName', e.target.value)} placeholder="Your dentist's name" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="insuranceProvider">Insurance Provider</Label>
+                            <Input id="insuranceProvider" value={formData.insuranceProvider} onChange={(e) => handleInputChange('insuranceProvider', e.target.value)} placeholder="Insurance company name" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="policyNumber">Policy Number</Label>
+                            <Input id="policyNumber" value={formData.policyNumber} onChange={(e) => handleInputChange('policyNumber', e.target.value)} placeholder="Insurance policy number" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="policyHolder">Policy Holder</Label>
+                            <Input id="policyHolder" value={formData.policyHolder} onChange={(e) => handleInputChange('policyHolder', e.target.value)} placeholder="Name of policy holder" />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="dentistPhone">Dentist Phone</Label>
-                          <Input id="dentistPhone" type="tel" value={formData.dentistPhone} onChange={(e) => handleInputChange('dentistPhone', e.target.value)} placeholder="Dentist's phone number" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="preferredHospital">Preferred Hospital</Label>
-                        <Input id="preferredHospital" value={formData.preferredHospital} onChange={(e) => handleInputChange('preferredHospital', e.target.value)} placeholder="Your preferred hospital for emergency care" />
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="insuranceProvider">Insurance Provider</Label>
-                          <Input id="insuranceProvider" value={formData.insuranceProvider} onChange={(e) => handleInputChange('insuranceProvider', e.target.value)} placeholder="Insurance company name" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="policyNumber">Policy Number</Label>
-                          <Input id="policyNumber" value={formData.policyNumber} onChange={(e) => handleInputChange('policyNumber', e.target.value)} placeholder="Insurance policy number" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="policyHolder">Policy Holder</Label>
-                          <Input id="policyHolder" value={formData.policyHolder} onChange={(e) => handleInputChange('policyHolder', e.target.value)} placeholder="Name of policy holder" />
-                        </div>
-                      </div>
+                      </fieldset>
                     </CardContent>
                   </Card>
 
                   {/* Section 5: Legal Authorization */}
-                  <Card>
-                    <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
-                      <CardTitle className="text-orange-800 dark:text-orange-200 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center text-sm font-bold">5</div>
-                        Legal Authorization
-                      </CardTitle>
-                      <p className="text-sm text-orange-700 dark:text-orange-300 mt-2">Please authorize the types of medical care you consent to receive during the trial. Check all that apply.</p>
-                    </CardHeader>
+                  <Card className={`${getSectionStatus(5) === 'disabled' ? 'opacity-50' : ''}`}>
+                    <SectionHeader
+                      sectionNumber={5}
+                      title="Legal Authorization"
+                      description="Please authorize the types of medical care you consent to receive during the trial. Check all that apply."
+                      status={getSectionStatus(5)}
+                      onMarkComplete={() => handleSectionComplete(5)}
+                      isCompleted={completedSections.section5}
+                      colorScheme="orange"
+                    />
                     <CardContent className="space-y-4 pt-6">
-                      <div className="space-y-3">
-                        <div className="flex items-start space-x-2">
-                          <Checkbox id="emergencyMedicalCare" checked={formData.emergencyMedicalCare} onCheckedChange={(checked) => handleInputChange('emergencyMedicalCare', !!checked)} />
-                          <Label htmlFor="emergencyMedicalCare" className="text-sm leading-normal">Emergency medical care and first aid</Label>
+                      <fieldset disabled={getSectionStatus(5) === 'disabled'}>
+                        <div className="space-y-3">
+                          <div className="flex items-start space-x-2">
+                            <Checkbox id="emergencyMedicalCare" checked={formData.emergencyMedicalCare} onCheckedChange={(checked) => handleInputChange('emergencyMedicalCare', !!checked)} />
+                            <Label htmlFor="emergencyMedicalCare" className="text-sm leading-normal">Emergency medical care and first aid</Label>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Checkbox id="surgery" checked={formData.surgery} onCheckedChange={(checked) => handleInputChange('surgery', !!checked)} />
+                            <Label htmlFor="surgery" className="text-sm leading-normal">Surgery if deemed necessary by medical professionals</Label>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Checkbox id="bloodTransfusions" checked={formData.bloodTransfusions} onCheckedChange={(checked) => handleInputChange('bloodTransfusions', !!checked)} />
+                            <Label htmlFor="bloodTransfusions" className="text-sm leading-normal">Blood transfusions if medically necessary</Label>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Checkbox id="dentalTreatment" checked={formData.dentalTreatment} onCheckedChange={(checked) => handleInputChange('dentalTreatment', !!checked)} />
+                            <Label htmlFor="dentalTreatment" className="text-sm leading-normal">Emergency dental treatment</Label>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Checkbox id="other" checked={formData.other} onCheckedChange={(checked) => handleInputChange('other', !!checked)} />
+                            <Label htmlFor="other" className="text-sm leading-normal">Other (please specify below)</Label>
+                          </div>
                         </div>
-                        <div className="flex items-start space-x-2">
-                          <Checkbox id="surgery" checked={formData.surgery} onCheckedChange={(checked) => handleInputChange('surgery', !!checked)} />
-                          <Label htmlFor="surgery" className="text-sm leading-normal">Surgery if deemed necessary by medical professionals</Label>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <Checkbox id="bloodTransfusions" checked={formData.bloodTransfusions} onCheckedChange={(checked) => handleInputChange('bloodTransfusions', !!checked)} />
-                          <Label htmlFor="bloodTransfusions" className="text-sm leading-normal">Blood transfusions if medically necessary</Label>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <Checkbox id="dentalTreatment" checked={formData.dentalTreatment} onCheckedChange={(checked) => handleInputChange('dentalTreatment', !!checked)} />
-                          <Label htmlFor="dentalTreatment" className="text-sm leading-normal">Emergency dental treatment</Label>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <Checkbox id="other" checked={formData.other} onCheckedChange={(checked) => handleInputChange('other', !!checked)} />
-                          <Label htmlFor="other" className="text-sm leading-normal">Other (please specify below)</Label>
-                        </div>
-                      </div>
-                      {formData.other && (
-                        <div className="space-y-2">
-                          <Label htmlFor="otherSpecify">Please specify other authorizations:</Label>
-                          <Textarea id="otherSpecify" value={formData.otherSpecify} onChange={(e) => handleInputChange('otherSpecify', e.target.value)} placeholder="Describe any other medical authorizations" rows={2} />
-                        </div>
-                      )}
+                        {formData.other && (
+                          <div className="space-y-2">
+                            <Label htmlFor="otherSpecify">Please specify other authorizations:</Label>
+                            <Textarea id="otherSpecify" value={formData.otherSpecify} onChange={(e) => handleInputChange('otherSpecify', e.target.value)} placeholder="Describe any other medical authorizations" rows={2} />
+                          </div>
+                        )}
+                      </fieldset>
                     </CardContent>
                   </Card>
 
                   {/* Section 6: Consent and Signature */}
-                  <Card>
-                    <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20">
-                      <CardTitle className="text-indigo-800 dark:text-indigo-200 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold">6</div>
-                        Final Consent & Signature
-                      </CardTitle>
-                      <p className="text-sm text-indigo-700 dark:text-indigo-300 mt-2">Final consent declarations and your digital signature to confirm participation in the NeuroSAFE PROOF trial.</p>
-                    </CardHeader>
+                  <Card className={`${getSectionStatus(6) === 'disabled' ? 'opacity-50' : ''}`}>
+                    <SectionHeader
+                      sectionNumber={6}
+                      title="Final Consent & Signature"
+                      description="Final consent declarations and your digital signature to confirm participation in the NeuroSAFE PROOF trial."
+                      status={getSectionStatus(6)}
+                      onMarkComplete={() => handleSectionComplete(6)}
+                      isCompleted={completedSections.section6}
+                      colorScheme="indigo"
+                    />
                     <CardContent className="space-y-6 pt-6">
+                      <fieldset disabled={getSectionStatus(6) === 'disabled'}>
                       {/* Trial Information Confirmation */}
                       <div className="bg-muted p-4 rounded-lg">
                         <p className="text-sm text-muted-foreground mb-4">Welcome to the NeuroSAFE PROOF Clinical Trial. This is a multi-centre, randomised controlled trial evaluating innovative robotic-assisted radical prostatectomy versus standard robotic assisted radical prostatectomy in men with prostate cancer.</p>
@@ -565,6 +664,7 @@ const ConsentForm = () => {
                         <Button type="submit" className="w-full" size="lg">Submit Consent Form</Button>
                         <p className="text-xs text-muted-foreground text-center mt-2">By submitting, you confirm all information is accurate and complete.</p>
                       </div>
+                      </fieldset>
                     </CardContent>
                   </Card>
                 </div>

@@ -9,14 +9,17 @@ const Header = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [userEmail, setUserEmail] = useState("");
 	const [userName, setUserName] = useState("");
+	const [userRole, setUserRole] = useState("");
 
 	useEffect(() => {
 		const sync = () => {
 			const email = localStorage.getItem("userEmail") || "";
 			const name = localStorage.getItem("userName") || "";
+			const role = localStorage.getItem("userRole") || "";
 			const token = localStorage.getItem("token") || "";
 			setUserEmail(token ? email : "");
 			setUserName(token ? name : "");
+			setUserRole(token ? role : "");
 		};
 		sync();
 		window.addEventListener("storage", sync);
@@ -27,8 +30,10 @@ const Header = () => {
 		localStorage.removeItem("token");
 		localStorage.removeItem("userEmail");
 		localStorage.removeItem("userName");
+		localStorage.removeItem("userRole");
 		setUserEmail("");
 		setUserName("");
+		setUserRole("");
 		navigate("/auth");
 	};
 
@@ -60,7 +65,9 @@ const Header = () => {
 					<div className="flex items-center space-x-4">
 						{display ? (
 							<>
-								<Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => navigate("/home")}>Dashboard</Button>
+								<Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => navigate(userRole === 'admin' ? "/admin-dashboard" : "/home")}>
+									{userRole === 'admin' ? 'Admin Dashboard' : 'Dashboard'}
+								</Button>
 								<Popover>
 									<PopoverTrigger asChild>
 										<Button variant="ghost" size="sm" className="flex items-center gap-2">
@@ -72,13 +79,24 @@ const Header = () => {
 									</PopoverTrigger>
 									<PopoverContent align="end" className="w-56">
 										<div className="pb-2 mb-2 border-b text-sm">
-											<div className="font-medium text-foreground">Signed in</div>
+											<div className="font-medium text-foreground">Signed in as {userRole === 'admin' ? 'Admin/CRO' : 'Participant'}</div>
 											<div className="text-muted-foreground truncate">{display}</div>
 										</div>
 										<div className="grid gap-2">
-											<Button variant="ghost" className="justify-start" onClick={() => navigate('/home')}>Dashboard</Button>
-											<Button variant="ghost" className="justify-start" onClick={() => navigate('/consent-form')}>Consent Form</Button>
-											<Button variant="destructive" className="justify-start" onClick={handleLogout}>Sign Out</Button>
+											{userRole === 'admin' ? (
+												<>
+													<Button variant="ghost" className="justify-start" onClick={() => navigate('/admin-dashboard')}>Admin Dashboard</Button>
+													<Button variant="destructive" className="justify-start" onClick={handleLogout}>Sign Out</Button>
+												</>
+											) : (
+												<>
+													<Button variant="ghost" className="justify-start" onClick={() => navigate('/home')}>Dashboard</Button>
+													<Button variant="ghost" className="justify-start" onClick={() => navigate('/patient-dashboard')}>My Profile</Button>
+													<Button variant="ghost" className="justify-start" onClick={() => navigate('/trial-info')}>Trial Information</Button>
+													<Button variant="ghost" className="justify-start" onClick={() => navigate('/consent-form')}>Consent Form</Button>
+													<Button variant="destructive" className="justify-start" onClick={handleLogout}>Sign Out</Button>
+												</>
+											)}
 										</div>
 									</PopoverContent>
 								</Popover>
@@ -108,9 +126,20 @@ const Header = () => {
 						<nav className="flex flex-col space-y-3">
 							{display ? (
 								<>
-									<Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); navigate('/home'); }}>Dashboard</Button>
-									<Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); navigate('/consent-form'); }}>Consent Form</Button>
-									<Button variant="destructive" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); handleLogout(); }}>Sign Out</Button>
+									{userRole === 'admin' ? (
+										<>
+											<Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); navigate('/admin-dashboard'); }}>Admin Dashboard</Button>
+											<Button variant="destructive" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); handleLogout(); }}>Sign Out</Button>
+										</>
+									) : (
+										<>
+											<Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); navigate('/home'); }}>Dashboard</Button>
+											<Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); navigate('/patient-dashboard'); }}>My Profile</Button>
+											<Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); navigate('/trial-info'); }}>Trial Information</Button>
+											<Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); navigate('/consent-form'); }}>Consent Form</Button>
+											<Button variant="destructive" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); handleLogout(); }}>Sign Out</Button>
+										</>
+									)}
 								</>
 							) : (
 								<>
