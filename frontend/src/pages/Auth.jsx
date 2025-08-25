@@ -25,7 +25,6 @@ const googleProvider = new GoogleAuthProvider();
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("participant");
 
@@ -55,43 +54,6 @@ const Auth = () => {
     }
   };
 
-  const handleSubmit = async (e, type) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      // Dummy auth: read form values but do not call any backend
-      const form = new FormData(e.target);
-      let payload;
-      
-      if (type === 'participant') {
-        payload = { email: form.get('email'), password: form.get('password') };
-      } else if (type === 'admin') {
-        payload = { email: form.get('adminEmail'), password: form.get('adminPassword') };
-      } else if (type === 'register') {
-        payload = { firstName: form.get('firstName'), lastName: form.get('lastName'), email: form.get('registerEmail'), password: form.get('registerPassword') };
-      }
-
-      await new Promise((r) => setTimeout(r, 400));
-
-      // Dummy success: set localStorage and navigate
-      const derivedName = payload.firstName ? `${payload.firstName} ${payload.lastName}` : (payload.email ? payload.email.split('@')[0] : 'User');
-      localStorage.setItem('token', 'dummy-token');
-      localStorage.setItem('userEmail', payload.email || 'user@example.com');
-      localStorage.setItem('userName', derivedName);
-      localStorage.setItem('userRole', type === 'admin' ? 'admin' : 'participant');
-
-      // Navigate based on user role
-      if (type === 'admin') {
-        navigate('/admin-dashboard');
-      } else {
-        navigate('/home');
-      }
-    } catch (err) {
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-light via-background to-accent-light flex items-center justify-center p-4">
@@ -112,104 +74,38 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 mb-4">
-              <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-                Continue with Google {activeTab === 'admin' ? '(Admin/CRO)' : '(Participant)'}
-              </Button>
+            <div className="space-y-4">
+              <Tabs defaultValue="participant" className="w-full" onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="participant">Participant</TabsTrigger>
+                  <TabsTrigger value="admin">Admin/CRO</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="participant" className="space-y-4">
+                  <div className="text-center space-y-2">
+                    <h3 className="text-lg font-semibold">Participant Access</h3>
+                    <p className="text-sm text-muted-foreground">Sign in to access your clinical trial dashboard and consent forms</p>
+                  </div>
+                  <Button type="button" variant="medical" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Continue with Google"}
+                  </Button>
+                </TabsContent>
+
+                <TabsContent value="admin" className="space-y-4">
+                  <div className="text-center space-y-2">
+                    <h3 className="text-lg font-semibold">Admin/CRO Access</h3>
+                    <p className="text-sm text-muted-foreground">Clinical Research Organization access to review participant applications</p>
+                    <div className="text-xs text-muted-foreground bg-primary-light p-3 rounded-lg">
+                      <Shield className="w-4 h-4 inline mr-1" />
+                      Secure admin access for authorized personnel only
+                    </div>
+                  </div>
+                  <Button type="button" variant="medical" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Continue with Google (Admin)"}
+                  </Button>
+                </TabsContent>
+              </Tabs>
             </div>
-
-            <Tabs defaultValue="participant" className="w-full" onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="participant">Participant</TabsTrigger>
-                <TabsTrigger value="admin">Admin/CRO</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="participant">
-                <form onSubmit={(e) => handleSubmit(e, 'participant')} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" placeholder="Enter your email" required />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" required />
-                      <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Button type="submit" variant="medical" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In as Participant"}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="admin">
-                <form onSubmit={(e) => handleSubmit(e, 'admin')} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="adminEmail">Admin Email</Label>
-                    <Input id="adminEmail" name="adminEmail" type="email" placeholder="Enter admin email" required />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="adminPassword">Admin Password</Label>
-                    <div className="relative">
-                      <Input id="adminPassword" name="adminPassword" type={showPassword ? "text" : "password"} placeholder="Enter admin password" required />
-                      <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-muted-foreground bg-primary-light p-3 rounded-lg">
-                    <Shield className="w-4 h-4 inline mr-1" />
-                    Admin access for Clinical Research Organizations (CRO) to review participant applications
-                  </div>
-
-                  <Button type="submit" variant="medical" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In as Admin/CRO"}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="register">
-                <form onSubmit={(e) => handleSubmit(e, 'register')} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" name="firstName" placeholder="John" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" name="lastName" placeholder="Doe" required />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="registerEmail">Email</Label>
-                    <Input id="registerEmail" name="registerEmail" type="email" placeholder="Enter your email" required />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="registerPassword">Password</Label>
-                    <div className="relative">
-                      <Input id="registerPassword" name="registerPassword" type={showPassword ? "text" : "password"} placeholder="Create a password" required />
-                      <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Button type="submit" variant="medical" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Create Account"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
 
             <div className="mt-6 p-4 bg-primary-light rounded-lg">
               <div className="flex items-center space-x-2 text-sm text-primary">
