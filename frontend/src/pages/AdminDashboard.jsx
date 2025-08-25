@@ -351,10 +351,10 @@ const AdminDashboard = () => {
                       <div className="flex items-center space-x-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                           participant.status === 'completed' 
-                            ? 'bg-green-100 dark:bg-green-900/30' 
-                            : 'bg-yellow-100 dark:bg-yellow-900/30'
+                            ? 'bg-yellow-100 dark:bg-green-900/30' 
+                            : 'bg-green-100 dark:bg-yellow-900/30'
                         }`}>
-                          {participant.status === 'completed' ? (
+                          {participant.status === 'approved' ? (
                             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                           ) : (
                             <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
