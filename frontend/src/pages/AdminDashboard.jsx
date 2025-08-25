@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, BarChart, FileText, Settings, Bell, Shield, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Users, BarChart, FileText, Settings, Bell, Shield, CheckCircle, Clock, AlertCircle, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -160,15 +160,37 @@ const AdminDashboard = () => {
   };
 
   const handleRejectParticipant = async (participantId) => {
+    console.log('Rejecting participant:', participantId);
     try {
-      // Update in localStorage
+      // Find participant to get Firestore ID
+      const participant = participants.find(p => p.id === participantId);
+      if (!participant) {
+        console.error('Participant not found with ID:', participantId);
+        alert('Participant not found. Please refresh the page and try again.');
+        return;
+      }
+
+      // Update in Firestore if firestoreId exists
+      if (participant.firestoreId) {
+        const { updateParticipantStatusInFirestore } = await import('../services/firestoreService');
+        const firestoreResult = await updateParticipantStatusInFirestore(participant.firestoreId, 'rejected');
+        
+        if (firestoreResult.success) {
+          console.log('Participant status updated to rejected in Firestore');
+        } else {
+          console.error('Failed to update in Firestore:', firestoreResult.error);
+        }
+      }
+
+      // Update in localStorage as backup
       const existingParticipants = JSON.parse(localStorage.getItem('participants') || '[]');
       const updatedParticipants = existingParticipants.map(p => 
-        p.id === participantId ? { ...p, status: 'rejected' } : p
+        p.id === participantId ? { ...p, status: 'rejected', rejectedDate: new Date().toISOString() } : p
       );
       localStorage.setItem('participants', JSON.stringify(updatedParticipants));
+      console.log('Participant status updated to rejected in localStorage');
 
-      // Try to update via API
+      // Try to update via API (skip if not available)
       try {
         const response = await fetch(`/api/consents/${participantId}`, {
           method: 'PATCH',
@@ -182,14 +204,16 @@ const AdminDashboard = () => {
           console.log('API reject update failed:', response.status, response.statusText);
         }
       } catch (apiError) {
-        console.log('API not available, using localStorage only:', apiError.message);
+        console.log('API not available:', apiError.message);
       }
 
       // Refresh participants list
+      console.log('Refreshing participants list...');
       await fetchParticipants();
+      console.log('Participants list refreshed');
     } catch (error) {
       console.error('Error rejecting participant:', error);
-      throw error;
+      alert('Error rejecting participant. Please try again.');
     }
   };
 
@@ -197,26 +221,34 @@ const AdminDashboard = () => {
     try {
       console.log('Deleting participant:', participantId);
       
+      // Find participant to get Firestore ID
+      const participant = participants.find(p => p.id === participantId);
+      if (!participant) {
+        console.error('Participant not found with ID:', participantId);
+        alert('Participant not found. Please refresh the page and try again.');
+        return;
+      }
+
+      // Delete from Firestore if firestoreId exists
+      if (participant.firestoreId) {
+        const { deleteParticipantFromFirestore } = await import('../services/firestoreService');
+        const firestoreResult = await deleteParticipantFromFirestore(participant.firestoreId);
+        
+        if (firestoreResult.success) {
+          console.log('Participant deleted from Firestore');
+        } else {
+          console.error('Failed to delete from Firestore:', firestoreResult.error);
+        }
+      }
+      
       // Remove from localStorage
       const existingParticipants = JSON.parse(localStorage.getItem('participants') || '[]');
       const updatedParticipants = existingParticipants.filter(p => p.id !== participantId);
       localStorage.setItem('participants', JSON.stringify(updatedParticipants));
       console.log('Participant removed from localStorage');
 
-      // Try to delete via API
-      try {
-        const response = await fetch(`/api/consents/${participantId}`, {
-          method: 'DELETE',
-        });
-        
-        if (response.ok) {
-          console.log('API delete successful');
-        } else {
-          console.log('API delete failed:', response.status, response.statusText);
-        }
-      } catch (apiError) {
-        console.log('API not available, using localStorage only:', apiError.message);
-      }
+      // Skip API delete since backend not available
+      console.log('Skipping API delete - backend not configured');
 
       // Refresh participants list
       await fetchParticipants();
@@ -350,14 +382,22 @@ const AdminDashboard = () => {
                     <div key={participant.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          participant.status === 'completed' 
-                            ? 'bg-yellow-100 dark:bg-green-900/30' 
-                            : 'bg-green-100 dark:bg-yellow-900/30'
+                          participant.status === 'approved' 
+                            ? 'bg-green-100 dark:bg-green-900/30' 
+                            : participant.status === 'rejected'
+                            ? 'bg-red-100 dark:bg-red-900/30'
+                            : participant.status === 'completed'
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                            : 'bg-gray-100 dark:bg-gray-900/30'
                         }`}>
                           {participant.status === 'approved' ? (
                             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                          ) : (
+                          ) : participant.status === 'rejected' ? (
+                            <X className="w-5 h-5 text-red-600 dark:text-red-400" />
+                          ) : participant.status === 'completed' ? (
                             <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                           )}
                         </div>
                         <div className="flex-1">
