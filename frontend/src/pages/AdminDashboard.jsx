@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, BarChart, FileText, Settings, Bell, Shield, CheckCircle, Clock, AlertCircle, X } from "lucide-react";
+import { Users, FileText, Shield, CheckCircle, Clock, AlertCircle, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,30 +22,6 @@ const AdminDashboard = () => {
     fetchParticipants();
   }, []);
 
-  const addTestParticipant = () => {
-    const testParticipant = {
-      id: `NS-${Date.now().toString().slice(-8)}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-      firstName: 'Test',
-      lastName: 'Participant',
-      participantName: 'Test Participant',
-      email: 'test@example.com',
-      status: 'completed',
-      submissionDate: new Date().toISOString(),
-      healthConditions: 'No significant health conditions reported',
-      allergies: 'No known allergies',
-      currentMedications: 'None currently',
-      informedConsent: true,
-      dataUsageConsent: true,
-      dateOfBirth: '1990-01-01',
-      phone: '555-0123',
-      address: '123 Test St, Test City'
-    };
-
-    const existingParticipants = JSON.parse(localStorage.getItem('participants') || '[]');
-    existingParticipants.push(testParticipant);
-    localStorage.setItem('participants', JSON.stringify(existingParticipants));
-    fetchParticipants();
-  };
 
   const fetchParticipants = async () => {
     try {
@@ -67,17 +43,6 @@ const AdminDashboard = () => {
         allParticipants = localParticipants;
       }
       
-      // Also try to fetch from API as additional source
-      try {
-        const response = await fetch('/api/consents');
-        if (response.ok) {
-          const apiParticipants = await response.json();
-          console.log('Also fetched from API:', apiParticipants.length);
-          // Merge with Firestore data if needed (avoid duplicates)
-        }
-      } catch (apiError) {
-        console.log('API not available');
-      }
       setParticipants(allParticipants);
       
       // Calculate stats
@@ -132,22 +97,6 @@ const AdminDashboard = () => {
       localStorage.setItem('participants', JSON.stringify(updatedParticipants));
       console.log('Participant status updated in localStorage');
 
-      // Try to update via API (skip if not available)
-      try {
-        const response = await fetch(`/api/consents/${participantId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'approved' }),
-        });
-        
-        if (response.ok) {
-          console.log('API update successful');
-        } else {
-          console.log('API update failed:', response.status, response.statusText);
-        }
-      } catch (apiError) {
-        console.log('API not available:', apiError.message);
-      }
 
       // Refresh participants list
       console.log('Refreshing participants list...');
@@ -190,22 +139,6 @@ const AdminDashboard = () => {
       localStorage.setItem('participants', JSON.stringify(updatedParticipants));
       console.log('Participant status updated to rejected in localStorage');
 
-      // Try to update via API (skip if not available)
-      try {
-        const response = await fetch(`/api/consents/${participantId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'rejected' }),
-        });
-        
-        if (response.ok) {
-          console.log('API reject update successful');
-        } else {
-          console.log('API reject update failed:', response.status, response.statusText);
-        }
-      } catch (apiError) {
-        console.log('API not available:', apiError.message);
-      }
 
       // Refresh participants list
       console.log('Refreshing participants list...');
@@ -247,8 +180,6 @@ const AdminDashboard = () => {
       localStorage.setItem('participants', JSON.stringify(updatedParticipants));
       console.log('Participant removed from localStorage');
 
-      // Skip API delete since backend not available
-      console.log('Skipping API delete - backend not configured');
 
       // Refresh participants list
       await fetchParticipants();
@@ -435,22 +366,6 @@ const AdminDashboard = () => {
                 <FileText className="w-4 h-4 mr-2" />
                 Refresh Data
               </Button>
-              {/* <Button variant="medical-outline" className="w-full justify-start">
-                <Users className="w-4 h-4 mr-2" />
-                Export Participants
-              </Button>
-              <Button variant="medical-outline" className="w-full justify-start">
-                <BarChart className="w-4 h-4 mr-2" />
-                View Analytics
-              </Button>
-              <Button variant="medical-outline" className="w-full justify-start" onClick={addTestParticipant}>
-                <Users className="w-4 h-4 mr-2" />
-                Add Test Participant
-              </Button>
-              <Button variant="medical-outline" className="w-full justify-start">
-                <Settings className="w-4 h-4 mr-2" />
-                System Settings
-              </Button> */}
             </CardContent>
           </Card>
         </div>
@@ -473,5 +388,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-
