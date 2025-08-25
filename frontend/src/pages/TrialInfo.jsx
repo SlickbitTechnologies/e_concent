@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { FileText, CalendarDays, FlaskConical, Building2, UserCircle2, MapPin, ArrowLeft } from "lucide-react";
 import Chatbot from "@/components/Chatbot";
 

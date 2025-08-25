@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Lock } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import Header from '../components/Header';
 import SectionHeader from '../components/SectionHeader';
 import Chatbot from '../components/Chatbot';
-import { consentFormText, fields } from '../data/consentFormData';
 import { saveParticipantToFirestore } from '../services/firestoreService';
 
 const ConsentForm = () => {
@@ -356,10 +355,6 @@ Respond with either "VALID" if the information is adequate, or provide 2-3 lines
   };
 
   const handleBackToEdit = () => setShowPreview(false);
-
-  const consentFormText = `
-    Welcome to the NeuroSAFE PROOF Clinical Trial consent form...
-  `;
 
   return (
     <div className="min-h-screen bg-background">
@@ -858,7 +853,6 @@ Respond with either "VALID" if the information is adequate, or provide 2-3 lines
         initialMessages={[
           { id: 1, text: "Hello! I'm here to help you understand the consent form and clinical trial details. What would you like to know?", isBot: true }
         ]}
-        infoText={consentFormText}
         context="form"
         onFieldsPatch={(patch) => {
           setFormData((prev) => ({ ...prev, ...patch }));
