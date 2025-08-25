@@ -12,6 +12,7 @@ import Header from '../components/Header';
 import SectionHeader from '../components/SectionHeader';
 import Chatbot from '../components/Chatbot';
 import { consentFormText, fields } from '../data/consentFormData';
+import { saveParticipantToFirestore } from '../services/firestoreService';
 
 const ConsentForm = () => {
   const navigate = useNavigate();
@@ -273,19 +274,84 @@ Respond with either "VALID" if the information is adequate, or provide 2-3 lines
     setShowPreview(true);
   };
 
+  const generateUniqueId = () => {
+    const timestamp = Date.now().toString();
+    const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return `NS-${timestamp.slice(-8)}-${randomNum}`;
+  };
+
   const handleFinalSubmit = async () => {
     try {
-      const response = await fetch('/api/consents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) throw new Error('Failed to submit consent');
-      const saved = await response.json();
-      navigate('/submission-success', { state: { consentId: saved.id } });
+      console.log('Starting form submission...');
+      const uniqueId = generateUniqueId();
+      console.log('Generated unique ID:', uniqueId);
+      
+      const submissionData = {
+        id: uniqueId,
+        ...formData,
+        submissionDate: new Date().toISOString(),
+        status: 'completed',
+        participantName: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        // Ensure these fields are explicitly set
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      };
+      console.log('Submission data prepared:', submissionData);
+
+      // Save to Firestore database
+      console.log('Saving participant data to Firestore...');
+      const firestoreResult = await saveParticipantToFirestore(submissionData);
+      
+      if (firestoreResult.success) {
+        console.log('Data successfully saved to Firestore with ID:', firestoreResult.id);
+        // Update submission data with Firestore ID
+        submissionData.firestoreId = firestoreResult.id;
+      } else {
+        console.error('Failed to save to Firestore:', firestoreResult.error);
+        alert('Warning: Data could not be saved to database. Please contact support.');
+      }
+
+      // Store in localStorage as backup
+      const existingParticipants = JSON.parse(localStorage.getItem('participants') || '[]');
+      existingParticipants.push(submissionData);
+      localStorage.setItem('participants', JSON.stringify(existingParticipants));
+      console.log('Data stored in localStorage as backup, total participants:', existingParticipants.length);
+
+      // Also try to send to backend API (if available)
+      try {
+        const response = await fetch('/api/consents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submissionData),
+        });
+        
+        if (response.ok) {
+          console.log('Data successfully sent to backend API');
+        } else {
+          console.log('Backend API response not OK:', response.status);
+        }
+      } catch (apiError) {
+        console.log('Backend API not available:', apiError.message);
+      }
+
+      console.log('Navigating to success page...');
+      // Navigate to success page with the unique ID
+      try {
+        navigate('/submission-success', { 
+          state: { 
+            uniqueId, 
+            participantData: submissionData 
+          }
+        });
+      } catch (navError) {
+        console.error('Navigation error:', navError);
+        // Fallback: show success message inline
+        alert(`Form submitted successfully! Your unique ID is: ${uniqueId}`);
+      }
     } catch (error) {
-      console.error('Submission failed:', error);
-      alert('Submission failed. Please try again.');
+      console.error('Submission error:', error);
+      alert(`Submission failed: ${error.message}. Please try again.`);
     }
   };
 

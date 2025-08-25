@@ -50,11 +50,7 @@ const App = () => (
               <ConsentForm />
             </ProtectedRoute>
           } />
-          <Route path="/submission-success" element={
-            <ProtectedRoute allowedRoles={['participant']}>
-              <SubmissionSuccess />
-            </ProtectedRoute>
-          } />
+          <Route path="/submission-success" element={<SubmissionSuccess />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

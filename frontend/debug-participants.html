@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Participants</title>
+</head>
+<body>
+    <h1>Participants Debug</h1>
+    <div id="output"></div>
+    
+    <script>
+        const participants = JSON.parse(localStorage.getItem('participants') || '[]');
+        const output = document.getElementById('output');
+        
+        if (participants.length === 0) {
+            output.innerHTML = '<p>No participants found in localStorage</p>';
+        } else {
+            output.innerHTML = '<h2>Found ' + participants.length + ' participants:</h2>';
+            participants.forEach((p, index) => {
+                output.innerHTML += `
+                    <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                        <h3>Participant ${index + 1}</h3>
+                        <p><strong>ID:</strong> ${p.id}</p>
+                        <p><strong>Name:</strong> ${p.participantName || p.firstName + ' ' + p.lastName}</p>
+                        <p><strong>Status:</strong> ${p.status}</p>
+                        <p><strong>Email:</strong> ${p.email}</p>
+                        <p><strong>Submission Date:</strong> ${p.submissionDate}</p>
+                    </div>
+                `;
+            });
+        }
+        
+        // Add a test participant if none exist
+        if (participants.length === 0) {
+            const testParticipant = {
+                id: 'NS-12345678-0001',
+                firstName: 'John',
+                lastName: 'Doe',
+                participantName: 'John Doe',
+                email: 'john.doe@example.com',
+                status: 'completed',
+                submissionDate: new Date().toISOString(),
+                healthConditions: 'No significant health conditions',
+                allergies: 'None',
+                currentMedications: 'None',
+                informedConsent: true,
+                dataUsageConsent: true
+            };
+            
+            localStorage.setItem('participants', JSON.stringify([testParticipant]));
+            output.innerHTML += '<p style="color: green;">Added test participant for debugging</p>';
+            location.reload();
+        }
+    </script>
+</body>
+</html>

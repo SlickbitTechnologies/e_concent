@@ -48,3 +48,27 @@ async def get_consent(consent_id: str):
 		if r.get("id") == consent_id:
 			return ConsentRecord(**r)
 	raise HTTPException(status_code=404, detail="Consent not found")
+
+
+class ConsentStatusUpdate(BaseModel):
+	status: str
+
+
+@router.patch("/consents/{consent_id}")
+async def update_consent_status(consent_id: str, update: ConsentStatusUpdate):
+	for r in _consents:
+		if r.get("id") == consent_id:
+			# Update the status in the consent data
+			r["data"]["status"] = update.status
+			return {"message": "Status updated successfully", "id": consent_id, "status": update.status}
+	raise HTTPException(status_code=404, detail="Consent not found")
+
+
+@router.delete("/consents/{consent_id}")
+async def delete_consent(consent_id: str):
+	global _consents
+	for i, r in enumerate(_consents):
+		if r.get("id") == consent_id:
+			deleted_consent = _consents.pop(i)
+			return {"message": "Consent deleted successfully", "id": consent_id}
+	raise HTTPException(status_code=404, detail="Consent not found")

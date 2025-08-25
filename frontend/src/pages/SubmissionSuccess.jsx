@@ -1,27 +1,52 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle, Copy, Download, Mail, Phone, Calendar, ArrowLeft } from "lucide-react";
+// import { useState } from "react";
+import { CheckCircle, Download, Home, FileText, ArrowLeft, Copy, Calendar, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
 const SubmissionSuccess = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [uniqueCode, setUniqueCode] = useState("");
   const [submissionDate, setSubmissionDate] = useState("");
   const [copied, setCopied] = useState(false);
+  const [participantData, setParticipantData] = useState(null);
 
   useEffect(() => {
-    const generateUniqueCode = () => {
-      const prefix = "NSP";
-      const timestamp = Date.now().toString().slice(-6);
-      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-      return `${prefix}-${timestamp}-${random}`;
-    };
-    setUniqueCode(generateUniqueCode());
-    setSubmissionDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
-  }, []);
+    try {
+      console.log('SubmissionSuccess page loaded, location.state:', location.state);
+      // Get data from navigation state or generate fallback
+      const { uniqueId, participantData: passedData } = location.state || {};
+      
+      if (uniqueId && passedData) {
+        console.log('Using passed data - uniqueId:', uniqueId);
+        setUniqueCode(uniqueId);
+        setParticipantData(passedData);
+        setSubmissionDate(new Date(passedData.submissionDate).toLocaleDateString('en-US', { 
+          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+        }));
+      } else {
+        console.log('No passed data, generating fallback');
+        // Fallback for direct navigation
+        const fallbackCode = "NS-" + Date.now().toString().slice(-8) + "-" + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        setUniqueCode(fallbackCode);
+        setSubmissionDate(new Date().toLocaleDateString('en-US', { 
+          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+        }));
+      }
+    } catch (error) {
+      console.error('Error in SubmissionSuccess useEffect:', error);
+      // Generate fallback data even if there's an error
+      const fallbackCode = "NS-" + Date.now().toString().slice(-8) + "-" + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      setUniqueCode(fallbackCode);
+      setSubmissionDate(new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+      }));
+    }
+  }, [location.state]);
 
   const handleCopyCode = async () => {
     try {

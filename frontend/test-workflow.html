@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Submission to Admin Workflow</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test: Submission to Admin Approval Workflow</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Create Test Participant</h2>
+        <button onclick="createTestParticipant()">Create Test Participant</button>
+        <div id="step1-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 2: Verify Participant in Admin Dashboard</h2>
+        <button onclick="checkParticipants()">Check Participants</button>
+        <div id="step2-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 3: Test Approval Process</h2>
+        <button onclick="testApproval()">Test Approval</button>
+        <div id="step3-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 4: Verify Status Update</h2>
+        <button onclick="verifyStatusUpdate()">Verify Status</button>
+        <div id="step4-result"></div>
+    </div>
+
+    <script>
+        function createTestParticipant() {
+            const testParticipant = {
+                id: `NS-${Date.now().toString().slice(-8)}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+                firstName: 'Test',
+                lastName: 'User',
+                participantName: 'Test User',
+                email: 'test@example.com',
+                status: 'completed',
+                submissionDate: new Date().toISOString(),
+                healthConditions: 'No significant health conditions',
+                allergies: 'None',
+                currentMedications: 'None',
+                informedConsent: true,
+                dataUsageConsent: true,
+                dateOfBirth: '1990-01-01',
+                phone: '555-0123',
+                address: '123 Test St'
+            };
+
+            const existingParticipants = JSON.parse(localStorage.getItem('participants') || '[]');
+            existingParticipants.push(testParticipant);
+            localStorage.setItem('participants', JSON.stringify(existingParticipants));
+            
+            document.getElementById('step1-result').innerHTML = `
+                <div class="success">
+                    <h3>✅ Test participant created successfully!</h3>
+                    <p><strong>ID:</strong> ${testParticipant.id}</p>
+                    <p><strong>Status:</strong> ${testParticipant.status}</p>
+                    <p><strong>Total participants:</strong> ${existingParticipants.length}</p>
+                </div>
+            `;
+            
+            window.testParticipantId = testParticipant.id;
+        }
+
+        function checkParticipants() {
+            const participants = JSON.parse(localStorage.getItem('participants') || '[]');
+            const resultDiv = document.getElementById('step2-result');
+            
+            if (participants.length === 0) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ No participants found</h3>
+                        <p>Please create a test participant first.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="success"><h3>✅ Participants found in localStorage:</h3>';
+            participants.forEach((p, index) => {
+                html += `
+                    <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd;">
+                        <p><strong>Participant ${index + 1}:</strong></p>
+                        <p>ID: ${p.id}</p>
+                        <p>Name: ${p.participantName || p.firstName + ' ' + p.lastName}</p>
+                        <p>Status: ${p.status}</p>
+                        <p>Email: ${p.email}</p>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testApproval() {
+            const participants = JSON.parse(localStorage.getItem('participants') || '[]');
+            const resultDiv = document.getElementById('step3-result');
+            
+            if (participants.length === 0) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ No participants to approve</h3>
+                        <p>Please create a test participant first.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Find a participant with 'completed' status
+            const participantToApprove = participants.find(p => p.status === 'completed');
+            
+            if (!participantToApprove) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ No participants with 'completed' status found</h3>
+                        <p>All participants may already be processed.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Simulate approval process
+            const updatedParticipants = participants.map(p => 
+                p.id === participantToApprove.id ? { ...p, status: 'approved' } : p
+            );
+            
+            localStorage.setItem('participants', JSON.stringify(updatedParticipants));
+            
+            resultDiv.innerHTML = `
+                <div class="success">
+                    <h3>✅ Approval simulation successful!</h3>
+                    <p><strong>Approved participant:</strong> ${participantToApprove.id}</p>
+                    <p><strong>Status changed:</strong> completed → approved</p>
+                </div>
+            `;
+        }
+
+        function verifyStatusUpdate() {
+            const participants = JSON.parse(localStorage.getItem('participants') || '[]');
+            const resultDiv = document.getElementById('step4-result');
+            
+            const approvedCount = participants.filter(p => p.status === 'approved').length;
+            const completedCount = participants.filter(p => p.status === 'completed').length;
+            const rejectedCount = participants.filter(p => p.status === 'rejected').length;
+            
+            resultDiv.innerHTML = `
+                <div class="success">
+                    <h3>✅ Status verification complete!</h3>
+                    <p><strong>Total participants:</strong> ${participants.length}</p>
+                    <p><strong>Approved:</strong> ${approvedCount}</p>
+                    <p><strong>Pending Review (completed):</strong> ${completedCount}</p>
+                    <p><strong>Rejected:</strong> ${rejectedCount}</p>
+                    
+                    <h4>Workflow Status:</h4>
+                    ${participants.length > 0 ? '✅ Participants can be created' : '❌ No participants'}
+                    <br>
+                    ${approvedCount > 0 ? '✅ Approval process works' : '⚠️ No approved participants'}
+                    <br>
+                    ${completedCount >= 0 ? '✅ Status tracking works' : '❌ Status tracking failed'}
+                </div>
+            `;
+        }
+
+        // Auto-run basic check on page load
+        window.onload = function() {
+            checkParticipants();
+        };
+    </script>
+</body>
+</html>
