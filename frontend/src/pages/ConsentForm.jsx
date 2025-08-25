@@ -25,6 +25,7 @@ const ConsentForm = () => {
     section5: false,
     section6: false
   });
+  const [medicalValidationSuggestion, setMedicalValidationSuggestion] = useState('');
 
   const [formData, setFormData] = useState({
     // Personal Information
@@ -146,6 +147,49 @@ const ConsentForm = () => {
     return formData.healthConditions || formData.allergies || formData.currentMedications || formData.lastTetanusShot;
   };
 
+  const validateMedicalInfoWithLLM = async (medicalData) => {
+    const prompt = `Please validate the following medical information for completeness and quality. Check if the user provided meaningful details or just single words/irrelevant content:
+
+Health Conditions: "${medicalData.healthConditions || 'Not provided'}"
+Allergies: "${medicalData.allergies || 'Not provided'}"
+Current Medications: "${medicalData.currentMedications || 'Not provided'}"
+
+Respond with either "VALID" if the information is adequate, or provide 2-3 lines of specific suggestions for improvement if the information is incomplete, too brief, or irrelevant.`;
+
+    try {
+      // Simulated LLM validation - replace with actual LLM API call
+      const response = await simulateLLMValidation(medicalData);
+      return response;
+    } catch (error) {
+      console.error('LLM validation error:', error);
+      return 'VALID'; // Default to valid if validation fails
+    }
+  };
+
+  const simulateLLMValidation = async (medicalData) => {
+    // Simulate LLM response based on content quality
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+    
+    const hasHealthConditions = medicalData.healthConditions && medicalData.healthConditions.trim().length > 5;
+    const hasAllergies = medicalData.allergies && medicalData.allergies.trim().length > 3;
+    const hasMedications = medicalData.currentMedications && medicalData.currentMedications.trim().length > 5;
+    
+    // Check for single words or very brief entries
+    const healthConditionsBrief = medicalData.healthConditions && medicalData.healthConditions.trim().split(' ').length <= 2;
+    const allergiesBrief = medicalData.allergies && medicalData.allergies.trim().split(' ').length <= 1;
+    const medicationsBrief = medicalData.currentMedications && medicalData.currentMedications.trim().split(' ').length <= 2;
+    
+    if (!hasHealthConditions && !hasAllergies && !hasMedications) {
+      return "Please provide more detailed medical information. Consider describing any ongoing health conditions, known allergies (even if none), and current medications with dosages. This information is crucial for your safety during the trial.";
+    }
+    
+    if (healthConditionsBrief || allergiesBrief || medicationsBrief) {
+      return "Your medical information appears too brief. Please provide more detailed descriptions including symptoms, severity, and specific medication names with dosages. For example, instead of 'diabetes', write 'Type 2 diabetes diagnosed in 2020, managed with diet and exercise'.";
+    }
+    
+    return 'VALID';
+  };
+
   const validateSection4 = () => {
     // Medical care information is optional but at least one field should be filled
     return formData.physicianName || formData.dentistName || formData.preferredHospital || formData.insuranceProvider;
@@ -163,7 +207,7 @@ const ConsentForm = () => {
     return requiredFilled && consentChecked;
   };
 
-  const handleSectionComplete = (sectionNumber) => {
+  const handleSectionComplete = async (sectionNumber) => {
     let isValid = false;
     
     switch(sectionNumber) {
@@ -176,6 +220,26 @@ const ConsentForm = () => {
     }
 
     if (isValid) {
+      // Special validation for Medical Information section (Section 3)
+      if (sectionNumber === 3) {
+        setMedicalValidationSuggestion('Validating medical information...');
+        
+        const medicalData = {
+          healthConditions: formData.healthConditions,
+          allergies: formData.allergies,
+          currentMedications: formData.currentMedications
+        };
+        
+        const llmValidation = await validateMedicalInfoWithLLM(medicalData);
+        
+        if (llmValidation !== 'VALID') {
+          setMedicalValidationSuggestion(llmValidation);
+          return; // Don't mark as complete yet
+        } else {
+          setMedicalValidationSuggestion('');
+        }
+      }
+      
       setCompletedSections(prev => ({
         ...prev,
         [`section${sectionNumber}`]: true
@@ -443,7 +507,15 @@ const ConsentForm = () => {
                     <SectionHeader
                       sectionNumber={3}
                       title="Medical Information"
-                      description="Medical history is crucial for ensuring your safety during the trial. Please provide accurate information about your health conditions and medications."
+                      description={
+                        <><i>
+                        <span className="text-red-400 font-semibold">
+                          Medical history is crucial for ensuring your safety during the trial.
+                          Please provide accurate information about your health conditions and medications.
+                          Also, provide as much detail as possible.
+                          </span></i>
+                        </>
+                      }
                       status={getSectionStatus(3)}
                       onMarkComplete={() => handleSectionComplete(3)}
                       isCompleted={completedSections.section3}
@@ -467,6 +539,35 @@ const ConsentForm = () => {
                           <Label htmlFor="lastTetanusShot">Last Tetanus Shot</Label>
                           <Input id="lastTetanusShot" type="date" value={formData.lastTetanusShot} onChange={(e) => handleInputChange('lastTetanusShot', e.target.value)} placeholder="Date of last tetanus vaccination" />
                         </div>
+                        
+                        {/* LLM Validation Suggestion */}
+                        {medicalValidationSuggestion && (
+                          <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <div className="flex items-start space-x-2">
+                              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center mt-0.5">
+                                <span className="text-white text-xs font-bold">!</span>
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">
+                                  Medical Information Suggestion
+                                </h4>
+                                <p className="text-sm text-amber-700 dark:text-amber-300">
+                                  {medicalValidationSuggestion}
+                                </p>
+                                {medicalValidationSuggestion !== 'Validating medical information...' && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="mt-2 text-amber-700 border-amber-300 hover:bg-amber-100"
+                                    onClick={() => setMedicalValidationSuggestion('')}
+                                  >
+                                    Got it, let me update
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </fieldset>
                     </CardContent>
                   </Card>
