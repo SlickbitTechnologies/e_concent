@@ -75,11 +75,15 @@ const SubmissionSuccess = () => {
       <div className="bg-primary text-primary-foreground p-4">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-primary-foreground/10 rounded-lg flex items-center justify-center">
-              <div className="text-primary-foreground font-bold text-sm">NEUROSAFE<br />PROOF</div>
+            <div className="w-16 h-16  rounded-lg flex items-center justify-center w-[150px] h-16">
+              <div className="text-primary-foreground font-bold text-sm ">
+              <div className="flex items-center justify-start w-[150px] h-16 ">
+							<img src="slickbit_black.png" alt="slickbit_black-lo" className="h-19 w-[140px]" />
+						</div>
+              </div>
             </div>
             <div>
-              <h1 className="text-xl font-bold">NeuroSAFE PROOF Clinical Trial</h1>
+              <h1 className="text-xl font-bold">Medical Consent </h1>
               <p className="text-primary-foreground/80">Submission Confirmation</p>
             </div>
           </div>

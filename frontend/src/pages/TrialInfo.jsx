@@ -47,18 +47,20 @@ const TrialInfo = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Page Header */}
-      <div className="bg-primary text-primary-foreground">
+      <div className="bg-primary text-black-foreground">
         <div className="container mx-auto px-4 py-4 max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary-foreground/20 text-primary-foreground">
-              <FileText className="h-5 w-5" />
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl  text-black-foreground w-[150px]">
+            <div className="flex items-center justify-start w-[150px] h-16 ">
+							<img src="slickbit_black.png" alt="slickbit-logo" className="h-19 w-[150px]" />
+						</div>
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">NeuroSAFE PROOF Clinical Trial</h1>
-              <p className="text-primary-foreground/80 text-sm">Trial Information</p>
+              <h1 className="text-xl font-bold leading-tight">MedConsent</h1>
+              <p className="text-primary-foreground/80 text-black">Trial Information</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ">
             <Button variant="ghost" onClick={() => navigate('/home')} className="text-primary-foreground hover:bg-primary-foreground/20">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard

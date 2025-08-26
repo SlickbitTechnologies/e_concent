@@ -51,9 +51,10 @@ const Header = () => {
 			<div className="container mx-auto px-4">
 				<div className="flex items-center justify-between h-16">
 					<div className="flex items-center space-x-3">
-						<div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-							<Shield className="w-6 h-6 text-primary-foreground" />
+						<div className="flex items-center justify-start w-[150px] h-16 ">
+							<img src="slickbit_black.png" alt="slickbit_black-lo" className="h-19 w-[150px]" />
 						</div>
+
 						<div>
 							<h1 className="text-xl font-bold text-foreground">MedConsent</h1>
 							<p className="text-xs text-muted-foreground">Clinical Trial Platform</p>

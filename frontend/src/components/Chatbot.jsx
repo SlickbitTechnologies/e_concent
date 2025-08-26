@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MessageCircle, X, Send, Mic, MicOff, Volume2, VolumeX, HelpCircle } from "lucide-react";
+import { consentFormHelp, sectionDescriptions, quickResponses } from "../data/consentFormHelp";
 
 const Chatbot = ({ 
   initialMessages = [], 
@@ -23,6 +24,90 @@ const Chatbot = ({
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [speakReplies, setSpeakReplies] = useState(false);
+
+  // Consent form guidance function
+  const getConsentFormGuidance = (message, fields) => {
+    const lowerMessage = message.toLowerCase();
+    
+    // Check for quick responses first
+    for (const [question, answer] of Object.entries(quickResponses)) {
+      if (lowerMessage.includes(question)) {
+        return answer;
+      }
+    }
+    
+    // Check for field-specific guidance first (more specific)
+    for (const [fieldKey, fieldInfo] of Object.entries(consentFormHelp)) {
+      const fieldLower = fieldKey.toLowerCase();
+      
+      // Check multiple variations of field matching
+      const fieldVariations = [
+        fieldLower,
+        fieldLower.replace(/([A-Z])/g, ' $1').toLowerCase().trim(), // camelCase to space separated
+        fieldLower.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase(), // another camelCase variation
+      ];
+      
+      // Also check for common field name patterns
+      if (fieldKey === 'currentMedications') {
+        fieldVariations.push('current medication', 'medications', 'medication', 'current meds', 'meds');
+      }
+      if (fieldKey === 'firstName') {
+        fieldVariations.push('first name', 'firstname');
+      }
+      if (fieldKey === 'lastName') {
+        fieldVariations.push('last name', 'lastname');
+      }
+      if (fieldKey === 'phoneNumber') {
+        fieldVariations.push('phone number', 'phone');
+      }
+      if (fieldKey === 'dateOfBirth') {
+        fieldVariations.push('date of birth', 'birth date', 'dob');
+      }
+      if (fieldKey === 'emergencyContactName') {
+        fieldVariations.push('emergency contact name', 'emergency contact');
+      }
+      if (fieldKey === 'emergencyContactPhone') {
+        fieldVariations.push('emergency contact phone', 'emergency phone');
+      }
+      if (fieldKey === 'healthConditions') {
+        fieldVariations.push('health conditions', 'health condition', 'medical conditions');
+      }
+      
+      // Check if any variation matches
+      for (const variation of fieldVariations) {
+        if (lowerMessage.includes(variation)) {
+          let response = `${fieldKey} field: ${fieldInfo.guidance}`;
+          if (fieldInfo.example) {
+            response += ` ${fieldInfo.example}`;
+          }
+          if (fieldInfo.required !== undefined) {
+            response += fieldInfo.required ? " This field is required." : " This field is optional.";
+          }
+          return response;
+        }
+      }
+    }
+    
+    // Check for section-specific requests
+    for (const [sectionName, description] of Object.entries(sectionDescriptions)) {
+      const sectionLower = sectionName.toLowerCase();
+      if (lowerMessage.includes(sectionLower) || lowerMessage.includes(sectionLower.replace(' ', ''))) {
+        return `${sectionName} Section: ${description} You can ask me about specific fields in this section for detailed guidance.`;
+      }
+    }
+    
+    // General help responses
+    if (lowerMessage.includes("help") || lowerMessage.includes("what") || lowerMessage.includes("how")) {
+      return "I can help you with: Field guidance - Ask about any specific form field like firstName, email, allergies, etc. Section information - Ask about Personal Information, Medical History, Emergency Contact, Healthcare Providers, Insurance Information, Legal Authorization, or Final Consent. General questions - Ask about security, time needed, or saving progress. What would you like to know more about?";
+    }
+    
+    if (lowerMessage.includes("section") || lowerMessage.includes("fill")) {
+      return "The consent form has these main sections: Personal Information - Your contact details. Medical History - Health conditions, medications, allergies. Emergency Contact - Someone to contact if needed. Healthcare Providers - Your doctors and preferred hospital. Insurance Information - Your health insurance details. Legal Authorization - Medical procedure permissions. Final Consent - Study agreements and signature. Which section would you like help with?";
+    }
+    
+    // Default response
+    return "I'm here to help you complete the consent form! You can ask me about: Any specific field like firstName, lastName, email, allergies, currentMedications, emergencyContactName, etc. Any section like Medical History or Personal Information. General questions about the form. What would you like to know?";
+  };
 
   const speak = (text) => {
     try {
@@ -55,22 +140,9 @@ const Chatbot = ({
           await playVoiceFromText(botResponse.text);
         }
       } else {
-        // Use backend API
-        const res = await fetch('/api/chat/text', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            message: messageText, 
-            context, 
-            infoText,
-            fields // Include fields metadata
-          }),
-        });
-        const data = await res.json();
-        if (data?.fieldsPatch && typeof onFieldsPatch === 'function') {
-          onFieldsPatch(data.fieldsPatch);
-        }
-        const botResponse = { id: Date.now() + 1, text: data?.reply || '...', isBot: true };
+        // Use local consent form guidance
+        const response = getConsentFormGuidance(messageText, fields);
+        const botResponse = { id: Date.now() + 1, text: response, isBot: true };
         setChatMessages((prev) => [...prev, botResponse]);
         setIsTyping(false);
         if (voiceInput || speakReplies) {
@@ -177,11 +249,21 @@ const Chatbot = ({
           >
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 animate-pulse" />
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-            <MessageCircle className="w-8 h-8 text-white relative z-10 drop-shadow-lg" />
-            {isListening && (
-              <div className="absolute inset-0 bg-red-500/30 animate-pulse rounded-full ring-4 ring-red-400/50" />
-            )}
+            <MessageCircle className="w-8 h-8 text-white relative z-10 drop-shadow-lg animate-bounce" />
+
+          <div className="absolute -top-1 -right-1 flex flex-col items-center space-y-1">
+            <div className="w-10 h-10 bg-white/100 rounded-full animate-ping"></div>
+            <div className="w-10 h-10 bg-white/100 rounded-full animate-ping" ></div>
+            <div className="w-10 h-10 bg-white/100 rounded-full animate-ping absolute right-10 top-2" 
+            ></div>
+          </div>
+
+          {isListening ? (
+            <div className="absolute inset-0 bg-red-500/30 animate-pulse rounded-full ring-4 ring-red-400/50" />
+          ) : (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full animate-ping"></div>
+          )}
+
           </Button>
         ) : (
           <Card className="w-96 h-[700px] shadow-2xl border-0 overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/20 backdrop-blur-sm" style={{marginBottom: '50px'}}>
