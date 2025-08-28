@@ -44,7 +44,7 @@ const Chatbot = ({
       - Confidential: All your medical records and personal details will remain private
       - Risks: Possible side effects may include tiredness, mild fever, nausea, or injection site discomfort (serious effects are rare but monitored)
       - Benefits: This treatment may improve blood sugar control and contribute to advancing diabetes care, though personal benefit is not guaranteed
-      - Contact: Email: trials@gmail.com, Phone: 9542757209, Address: Hyderabad, India
+      - Contact: Email: trials@gmail.com, Phone: 958765457209, Address: Hyderabad, India
     `;
   };
 
@@ -314,42 +314,84 @@ Please provide a helpful response to the user's question:`;
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
-      recognitionInstance.continuous = true;
+      recognitionInstance.continuous = false;
       recognitionInstance.interimResults = false;
       recognitionInstance.lang = 'en-US';
       
       recognitionInstance.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript;
-        sendMessage(transcript);
-        if (isListening) setTimeout(() => recognitionInstance.start(), 1000);
+        const transcript = event.results[0][0].transcript;
+        if (transcript.trim()) {
+          setChatInput(transcript);
+          sendMessage(transcript);
+        }
       };
       
       recognitionInstance.onend = () => {
-        if (isListening) setTimeout(() => recognitionInstance.start(), 500);
+        // Only restart if we're still in listening mode
+        if (isListening) {
+          try {
+            recognitionInstance.start();
+          } catch (e) {
+            console.error('Error restarting recognition:', e);
+          }
+        }
       };
       
       recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
         if (isListening && event.error !== 'aborted') {
-          setTimeout(() => recognitionInstance.start(), 1000);
+          // If there's an error, try to restart after a delay
+          setTimeout(() => {
+            try {
+              recognitionInstance.start();
+            } catch (e) {
+              console.error('Error restarting after error:', e);
+            }
+          }, 1000);
         }
       };
       
       setRecognition(recognitionInstance);
+      
+      // Cleanup function
+      return () => {
+        if (recognitionInstance) {
+          recognitionInstance.stop();
+        }
+      };
+    } else {
+      console.warn('Speech recognition not supported in this browser');
     }
   }, [isListening]);
 
   const startVoiceInput = () => {
-    if (recognition && !isListening) {
-      setIsListening(true);
-      setIsChatOpen(true);
-      recognition.start();
+    if (!recognition) {
+      console.error('Speech recognition not initialized');
+      return;
+    }
+    
+    try {
+      if (!isListening) {
+        setIsListening(true);
+        setIsChatOpen(true);
+        recognition.start();
+        console.log('Voice recognition started');
+      }
+    } catch (error) {
+      console.error('Error starting voice recognition:', error);
+      setIsListening(false);
     }
   };
 
   const stopVoiceInput = () => {
     if (recognition && isListening) {
-      setIsListening(false);
-      recognition.stop();
+      try {
+        recognition.stop();
+      } catch (error) {
+        console.error('Error stopping recognition:', error);
+      } finally {
+        setIsListening(false);
+      }
     }
   };
 
