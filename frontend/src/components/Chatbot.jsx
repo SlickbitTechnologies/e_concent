@@ -25,81 +25,116 @@ const Chatbot = ({
   const [recognition, setRecognition] = useState(null);
   const [speakReplies, setSpeakReplies] = useState(false);
 
-  // Trial information function
-  const getTrialInformation = (lowerMessage) => {
-    // More specific keyword matching - check for exact phrases first
+  // Trial information context
+  const getTrialContext = () => {
+    return infoText || `
+      Phase II clinical trial studying Glucora, a new GLP-1 receptor agonist for diabetes treatment.
+      
+      Drug Information:
+      - Investigational Drug: "Glucora" (a new GLP-1 receptor agonist)
+      - How it works: Helps regulate blood sugar by increasing insulin release and reducing glucose production in the liver
+      - Form: Subcutaneous injection, once weekly
+      - Status: Approved for testing in earlier Phase I trials with promising safety results
+      
+      Trial Details:
+      - Purpose: To evaluate the safety, tolerability, and effectiveness of Glucora compared to a placebo
+      - Duration: 12-18 months, including regular visits, blood tests, and health monitoring
+      - Location: Hyderabad, India
+      - Voluntary: You may withdraw at any point without affecting your medical care
+      - Confidential: All your medical records and personal details will remain private
+      - Risks: Possible side effects may include tiredness, mild fever, nausea, or injection site discomfort (serious effects are rare but monitored)
+      - Benefits: This treatment may improve blood sugar control and contribute to advancing diabetes care, though personal benefit is not guaranteed
+      - Contact: Email: trials@gmail.com, Phone: 9542757209, Address: Hyderabad, India
+    `;
+  };
+
+  // LLM-based response generation
+  const getTrialInformation = async (userQuestion) => {
+    try {
+      const trialContext = getTrialContext();
+      const response = await generateLLMResponse(userQuestion, trialContext);
+      return response;
+    } catch (error) {
+      console.error('LLM response error:', error);
+      return "I'm having trouble processing your question right now. Please contact the research team directly at trials@gmail.com or 9542757209 for assistance.";
+    }
+  };
+
+  // LLM API integration
+  const generateLLMResponse = async (question, context) => {
+    try {
+      // Simulate API delay for realistic experience
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      const prompt = `You are a helpful medical AI assistant explaining a clinical trial to potential participants. 
+
+Context about the trial:
+${context}
+
+User question: "${question}"
+
+Instructions:
+- Provide clear, accurate responses based ONLY on the trial information above
+- Keep responses concise (2-3 sentences) and friendly
+- If the question cannot be answered from the trial information, politely say so and direct to contact the research team
+- Do not make up information not provided in the context
+- For location questions, mention that the trial is in Hyderabad, India but you can't calculate distances
+- For eligibility questions, recommend contacting the research team for assessment
+- For cost/payment questions, direct to the research team for financial details
+
+Please provide a helpful response to the user's question:`;
+
+      // In a real implementation, you would call an actual LLM API here
+      // For now, we'll use a simple simulation
+      return await simulateLLMResponse(prompt);
+      
+    } catch (error) {
+      console.error('LLM API error:', error);
+      throw error; // Rethrow to be handled by the caller
+    }
+  };
+
+  // Simple LLM simulation for development
+  const simulateLLMResponse = async (prompt) => {
+    // Extract the user's question from the prompt
+    const questionMatch = prompt.match(/User question: \"([^\"]+)\"/i);
+    const question = questionMatch ? questionMatch[1].toLowerCase() : '';
     
-    // Duration-specific questions
-    if (lowerMessage.includes('duration') || lowerMessage.includes('how long') || 
-        lowerMessage.includes('how many months') || lowerMessage.includes('time frame') ||
-        lowerMessage.includes('length of trial') || lowerMessage.includes('trial duration')) {
-      return "The trial duration is 12-18 months, including regular visits, blood tests, and health monitoring. The treatment involves once-weekly injections.";
+    // Extract trial context from the prompt
+    const contextMatch = prompt.match(/Context about the trial:([\s\S]*?)(?=User question:|$)/i);
+    const context = contextMatch ? contextMatch[1] : '';
+    
+    // Simple keyword-based response generation
+    if (question.includes('what') && question.includes('drug')) {
+      return "This clinical trial is studying Glucora, a new GLP-1 receptor agonist for diabetes treatment. It's an investigational drug that helps regulate blood sugar by increasing insulin release and reducing glucose production in the liver.";
     }
     
-    // Withdrawal-specific questions
-    if (lowerMessage.includes('withdraw') || lowerMessage.includes('quit') || 
-        lowerMessage.includes('leave') || lowerMessage.includes('can i stop') ||
-        lowerMessage.includes('middle of') || lowerMessage.includes('exit')) {
-      return "Participation is completely voluntary. You may withdraw from the trial at any point without affecting your regular medical care. Simply contact the research team if you decide to withdraw.";
+    if (question.includes('purpose') || question.includes('why') || question.includes('objective')) {
+      return "The purpose of this trial is to evaluate the safety, tolerability, and effectiveness of Glucora compared to a placebo in treating diabetes. The study aims to determine if Glucora could become a new treatment option for diabetes patients.";
     }
     
-    // Purpose-specific questions
-    if (lowerMessage.includes('purpose') || lowerMessage.includes('why') || 
-        lowerMessage.includes('what for') || lowerMessage.includes('conducting') ||
-        lowerMessage.includes('reason for trial')) {
-      return "The purpose of this trial is to evaluate the safety, tolerability, and effectiveness of Glucora compared to a placebo in treating diabetes. This helps determine if Glucora can be a new treatment option for patients.";
+    if (question.includes('duration') || question.includes('how long')) {
+      return "The trial duration is 12-18 months, which includes regular visits, blood tests, and health monitoring. Participants will receive weekly injections during this period.";
     }
     
-    // Drug-specific questions
-    if (lowerMessage.includes('drug') || lowerMessage.includes('medication') || 
-        lowerMessage.includes('glucora') || lowerMessage.includes('what is glucora')) {
-      return "Glucora is an investigational GLP-1 receptor agonist that helps regulate blood sugar by increasing insulin release and reducing glucose production in the liver. It's given as a subcutaneous injection once weekly and has shown promising safety results in Phase I trials.";
+    if (question.includes('location') || question.includes('where')) {
+      return "The clinical trial is conducted in Hyderabad, India. For specific location details and directions, please contact the research team.";
     }
     
-    // Risk-specific questions
-    if (lowerMessage.includes('risk') || lowerMessage.includes('side effect') || 
-        lowerMessage.includes('danger') || lowerMessage.includes('harm')) {
-      return "Possible side effects may include tiredness, mild fever, nausea, or injection site discomfort. Serious effects are rare but will be closely monitored by the research team throughout the trial.";
+    if (question.includes('contact') || question.includes('email') || question.includes('phone')) {
+      return "You can reach the research team at trials@gmail.com or call 9542757209. They're available to answer any questions about the trial.";
     }
     
-    // Benefit-specific questions
-    if (lowerMessage.includes('benefit') || lowerMessage.includes('advantage') || 
-        lowerMessage.includes('help me') || lowerMessage.includes('good for')) {
-      return "This treatment may improve blood sugar control and contribute to advancing diabetes care. While personal benefit is not guaranteed, your participation helps advance medical research for future patients.";
+    if (question.includes('benefit') || question.includes('advantage')) {
+      return "The potential benefits of participating in this trial may include improved blood sugar control and contributing to medical research that could help future diabetes patients. However, personal benefit is not guaranteed.";
     }
     
-    // Contact-specific questions
-    if (lowerMessage.includes('contact') || lowerMessage.includes('phone') || 
-        lowerMessage.includes('email') || lowerMessage.includes('reach')) {
-      return "You can contact the research team anytime: Email: trials@gmail.com, Phone: 9542757209, Address: Hyderabad, India. The research team is available to answer your questions.";
+    if (question.includes('risk') || question.includes('side effect') || question.includes('danger')) {
+      return "Possible side effects may include tiredness, mild fever, nausea, or injection site discomfort. All potential risks will be fully explained during the informed consent process.";
     }
     
-    // Privacy-specific questions
-    if (lowerMessage.includes('confidential') || lowerMessage.includes('privacy') || 
-        lowerMessage.includes('private') || lowerMessage.includes('secure')) {
-      return "All your medical records and personal details will remain completely private and confidential. Only authorized research staff will have access to your data for study purposes.";
-    }
-    
-    // Phase-specific questions
-    if (lowerMessage.includes('phase') || lowerMessage.includes('what phase') || 
-        lowerMessage.includes('stage')) {
-      return "This is a Phase II clinical trial, which means the drug has already passed initial safety testing in Phase I. Phase II focuses on evaluating effectiveness and further safety monitoring.";
-    }
-    
-    // Placebo-specific questions
-    if (lowerMessage.includes('placebo') || lowerMessage.includes('control') || 
-        lowerMessage.includes('fake drug')) {
-      return "This is a placebo-controlled study, meaning some participants will receive the investigational drug Glucora while others receive a placebo (inactive treatment). This helps researchers determine the true effectiveness of the treatment.";
-    }
-    
-    // General trial questions (only if no specific match found)
-    if (lowerMessage.includes('trial') || lowerMessage.includes('study') || 
-        lowerMessage.includes('explain') || lowerMessage.includes('about')) {
-      return "This is a Phase II clinical trial studying Glucora, a new GLP-1 receptor agonist for diabetes treatment. The trial lasts 12-18 months and involves weekly subcutaneous injections. You can withdraw at any time without affecting your medical care.";
-    }
-    
-    // Default trial response
-    return "I can help you understand this diabetes clinical trial. Ask me about the drug Glucora, trial risks and benefits, duration, how to withdraw, contact information, or any other aspect of the study.";
+    // Default response for unhandled questions
+    return "I can help you with information about the Glucora clinical trial. You can ask about the drug being tested, trial duration, location, risks, benefits, or how to participate. For specific personal questions, please contact the research team at trials@gmail.com or call 9542757209.";
   };
 
   // Consent form guidance function
@@ -203,38 +238,40 @@ const Chatbot = ({
     }
   };
 
-  const sendMessage = async (voiceInput) => {
-    const messageText = voiceInput || chatInput;
+  const sendMessage = async (messageText = chatInput) => {
     if (!messageText.trim()) return;
-    
-    const newMessage = { id: Date.now(), text: messageText, isBot: false };
-    setChatMessages((prev) => [...prev, newMessage]);
+
+    const userMessage = { id: Date.now(), text: messageText, isBot: false };
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput("");
     setIsTyping(true);
-    
+
     try {
-      // If getBotResponse is provided, use it (for backward compatibility)
-      if (getBotResponse) {
-        const response = getBotResponse(messageText);
-        const botResponse = { id: Date.now() + 1, text: response, isBot: true };
-        setChatMessages((prev) => [...prev, botResponse]);
-        setIsTyping(false);
-        if (voiceInput || speakReplies) {
-          await playVoiceFromText(botResponse.text);
-        }
+      let botResponse;
+      
+      if (context === "trial") {
+        // For trial context, use async LLM-based response
+        botResponse = await getTrialInformation(messageText);
       } else {
-        // Use local consent form guidance
-        const response = getConsentFormGuidance(messageText, fields);
-        const botResponse = { id: Date.now() + 1, text: response, isBot: true };
-        setChatMessages((prev) => [...prev, botResponse]);
-        setIsTyping(false);
-        if (voiceInput || speakReplies) {
-          await playVoiceFromText(botResponse.text);
-        }
+        // For consent form context, use synchronous response
+        botResponse = getConsentFormGuidance(messageText, fields);
       }
-    } catch (e) {
-      console.error('Chat error:', e);
-      const botResponse = { id: Date.now() + 1, text: 'Sorry, I had trouble responding.', isBot: true };
-      setChatMessages((prev) => [...prev, botResponse]);
+      
+      const botMessage = { id: Date.now() + 1, text: botResponse, isBot: true };
+      setChatMessages(prev => [...prev, botMessage]);
+      setIsTyping(false);
+      
+      if (speakReplies) {
+        speak(botResponse);
+      }
+    } catch (error) {
+      console.error('Message processing error:', error);
+      const errorMessage = { 
+        id: Date.now() + 1, 
+        text: "I'm having trouble processing your question right now. Please try again or contact support if the issue persists.", 
+        isBot: true 
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
       setIsTyping(false);
     }
     
