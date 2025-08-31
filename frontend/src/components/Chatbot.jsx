@@ -27,25 +27,31 @@ const Chatbot = ({
 
   // Trial information context
   const getTrialContext = () => {
-    return infoText || `
-      Phase II clinical trial studying Glucora, a new GLP-1 receptor agonist for diabetes treatment.
-      
-      Drug Information:
-      - Investigational Drug: "Glucora" (a new GLP-1 receptor agonist)
-      - How it works: Helps regulate blood sugar by increasing insulin release and reducing glucose production in the liver
-      - Form: Subcutaneous injection, once weekly
-      - Status: Approved for testing in earlier Phase I trials with promising safety results
-      
-      Trial Details:
-      - Purpose: To evaluate the safety, tolerability, and effectiveness of Glucora compared to a placebo
-      - Duration: 12-18 months, including regular visits, blood tests, and health monitoring
-      - Location: Hyderabad, India
-      - Voluntary: You may withdraw at any point without affecting your medical care
-      - Confidential: All your medical records and personal details will remain private
-      - Risks: Possible side effects may include tiredness, mild fever, nausea, or injection site discomfort (serious effects are rare but monitored)
-      - Benefits: This treatment may improve blood sugar control and contribute to advancing diabetes care, though personal benefit is not guaranteed
-      - Contact: Email: trials@gmail.com, Phone: 958765457209, Address: Hyderabad, India
-    `;
+    return JSON.stringify({
+      title: "Phase ll Study of New Diabetes Treatment",
+      condition: "Type 2 Diabetes",
+      duration: "12-18 months, including regular visits, blood tests, and health monitoring",
+      location: "Hyderabad, India",
+      isVoluntary: true,
+      isConfidential: true,
+      risks: [
+        "Tiredness",
+        "Mild fever",
+        "Nausea",
+        "Injection site discomfort",
+        "Serious effects are rare but monitored"
+      ],
+      benefits: [
+        "May improve blood sugar control",
+        "Contributes to advancing diabetes care"
+      ],
+      contact: {
+        email: "trials@gmail.com",
+        phone: "958765457209",
+        address: "Hyderabad, India"
+      },
+      additionalInfo: "This is a clinical trial for a new diabetes medication. Participation is voluntary and you may withdraw at any point without affecting your medical care. All your medical records and personal details will remain private. Personal benefit is not guaranteed."
+    });
   };
 
   // LLM-based response generation
@@ -60,96 +66,280 @@ const Chatbot = ({
     }
   };
 
-  // LLM API integration
-  const generateLLMResponse = async (question, context) => {
+  // Backend LLM API integration
+  const generateLLMResponse = async (question, context, isFormFieldQuestion = false) => {
     try {
-      // Simulate API delay for realistic experience
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      let systemPrompt;
       
-      const prompt = `You are a helpful medical AI assistant explaining a clinical trial to potential participants. 
+      if (isFormFieldQuestion) {
+        // For form field questions, focus on guiding the user on what to enter
+        systemPrompt = `You are a helpful medical AI assistant guiding a user through filling out a clinical trial consent form. 
+        
+When asked about form fields, provide clear, specific guidance on what information to enter. 
+For medical fields like allergies, medications, or health conditions, explain what details to include and provide examples.
 
-Context about the trial:
+Be concise but thorough in your explanations. If the user asks about a field, explain:
+1. What information is being requested
+2. Why it's important for the clinical trial
+3. Examples of how to format the information
+4. Whether the field is required or optional
+
+Current context: ${context || 'No additional context provided'}`;
+      } else {
+        // For general trial information questions
+        try {
+          // Try to parse the context as JSON first
+          const trialInfo = JSON.parse(context);
+          systemPrompt = `You are a helpful medical AI assistant for a clinical trial. Use the following trial information to answer questions:
+
+TRIAL DETAILS:
+- Title: ${trialInfo.title}
+- Condition: ${trialInfo.condition}
+- Duration: ${trialInfo.duration}
+- Location: ${trialInfo.location}
+- ${trialInfo.isVoluntary ? 'Participation is voluntary' : 'Participation is required'}
+- ${trialInfo.isConfidential ? 'All information will be kept confidential' : 'Some information may be shared'}
+
+RISKS:
+${trialInfo.risks.map(r => `• ${r}`).join('\n')}
+
+BENEFITS:
+${trialInfo.benefits.map(b => `• ${b}`).join('\n')}
+
+CONTACT:
+- Email: ${trialInfo.contact.email}
+- Phone: ${trialInfo.contact.phone}
+- Address: ${trialInfo.contact.address}
+
+Additional Information: ${trialInfo.additionalInfo}
+
+When answering questions:
+- Be concise and accurate
+- Only use information from the provided context
+- If you don't know the answer, say so and provide contact information`;
+        } catch (e) {
+          // Fallback to plain text if JSON parsing fails
+          systemPrompt = `You are a helpful medical AI assistant for a clinical trial. Use the following trial information to answer questions:
+
+Trial Information:
 ${context}
 
-User question: "${question}"
+When answering questions:
+- Be concise and accurate
+- Only use information from the provided context
+- If you don't know the answer, say so and provide contact information`;
+        }
+      }
 
-Instructions:
-- Provide clear, accurate responses based ONLY on the trial information above
-- Keep responses concise (2-3 sentences) and friendly
-- If the question cannot be answered from the trial information, politely say so and direct to contact the research team
-- Do not make up information not provided in the context
-- For location questions, mention that the trial is in Hyderabad, India but you can't calculate distances
-- For eligibility questions, recommend contacting the research team for assessment
-- For cost/payment questions, direct to the research team for financial details
+      const response = await fetch('/api/chat/text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: question,
+          context: isFormFieldQuestion ? 'form' : 'trial',
+          infoText: systemPrompt,
+          fields: isFormFieldQuestion ? [] : undefined
+        }),
+      });
 
-Please provide a helpful response to the user's question:`;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      // In a real implementation, you would call an actual LLM API here
-      // For now, we'll use a simple simulation
-      return await simulateLLMResponse(prompt);
+      const data = await response.json();
+      return data.reply || "I couldn't generate a response. Please try asking your question differently.";
       
     } catch (error) {
-      console.error('LLM API error:', error);
-      throw error; // Rethrow to be handled by the caller
+      console.error('Error calling LLM API:', error);
+      return "I'm having trouble connecting to the assistant. Please try again later or contact the research team directly at trials@gmail.com or 9542757209.";
     }
-  };
-
-  // Simple LLM simulation for development
-  const simulateLLMResponse = async (prompt) => {
-    // Extract the user's question from the prompt
-    const questionMatch = prompt.match(/User question: \"([^\"]+)\"/i);
-    const question = questionMatch ? questionMatch[1].toLowerCase() : '';
-    
-    // Extract trial context from the prompt
-    const contextMatch = prompt.match(/Context about the trial:([\s\S]*?)(?=User question:|$)/i);
-    const context = contextMatch ? contextMatch[1] : '';
-    
-    // Simple keyword-based response generation
-    if (question.includes('what') && question.includes('drug')) {
-      return "This clinical trial is studying Glucora, a new GLP-1 receptor agonist for diabetes treatment. It's an investigational drug that helps regulate blood sugar by increasing insulin release and reducing glucose production in the liver.";
-    }
-    
-    if (question.includes('purpose') || question.includes('why') || question.includes('objective')) {
-      return "The purpose of this trial is to evaluate the safety, tolerability, and effectiveness of Glucora compared to a placebo in treating diabetes. The study aims to determine if Glucora could become a new treatment option for diabetes patients.";
-    }
-    
-    if (question.includes('duration') || question.includes('how long')) {
-      return "The trial duration is 12-18 months, which includes regular visits, blood tests, and health monitoring. Participants will receive weekly injections during this period.";
-    }
-    
-    if (question.includes('location') || question.includes('where')) {
-      return "The clinical trial is conducted in Hyderabad, India. For specific location details and directions, please contact the research team.";
-    }
-    
-    if (question.includes('contact') || question.includes('email') || question.includes('phone')) {
-      return "You can reach the research team at trials@gmail.com or call 9542757209. They're available to answer any questions about the trial.";
-    }
-    
-    if (question.includes('benefit') || question.includes('advantage')) {
-      return "The potential benefits of participating in this trial may include improved blood sugar control and contributing to medical research that could help future diabetes patients. However, personal benefit is not guaranteed.";
-    }
-    
-    if (question.includes('risk') || question.includes('side effect') || question.includes('danger')) {
-      return "Possible side effects may include tiredness, mild fever, nausea, or injection site discomfort. All potential risks will be fully explained during the informed consent process.";
-    }
-    
-    // Default response for unhandled questions
-    return "I can help you with information about the Glucora clinical trial. You can ask about the drug being tested, trial duration, location, risks, benefits, or how to participate. For specific personal questions, please contact the research team at trials@gmail.com or call 9542757209.";
   };
 
   // Consent form guidance function
-  const getConsentFormGuidance = (message, fields) => {
+  const getConsentFormGuidance = async (message, fields) => {
     const lowerMessage = message.toLowerCase();
     
-    // Handle trial-specific questions if context is "trial"
-    if (context === "trial") {
-      return getTrialInformation(lowerMessage);
+    // Handle form field questions regardless of context
+    const fieldMatch = Object.entries(consentFormHelp).find(([fieldKey, fieldInfo]) => {
+      const fieldLower = fieldKey.toLowerCase();
+      const fieldVariations = [
+        fieldLower,
+        fieldLower.replace(/([A-Z])/g, ' $1').toLowerCase().trim(),
+        fieldLower.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase(),
+      ];
+      
+      // Add common variations for specific fields
+      if (fieldKey === 'currentMedications') {
+        fieldVariations.push('current medication', 'medications', 'medication', 'current meds', 'meds', 'drugs', 'prescriptions');
+      } else if (fieldKey === 'healthConditions') {
+        fieldVariations.push('health conditions', 'health condition', 'medical conditions', 'medical history', 'current health', 'existing conditions', 'medical issues', 'health issues');
+      } else if (fieldKey === 'allergies') {
+        fieldVariations.push('allergy', 'allergic', 'allergic reactions', 'allergic to', 'allergic reaction', 'sensitivities', 'intolerances');
+      }
+      
+      return fieldVariations.some(variation => lowerMessage.includes(variation));
+    });
+    
+    if (fieldMatch) {
+      // For form field questions, use the LLM with form context
+      const [fieldKey, fieldInfo] = fieldMatch;
+      const fieldContext = `Field: ${fieldKey}\n\n${fieldInfo.guidance}\n\nExample: ${fieldInfo.example || 'N/A'}\n\n${fieldInfo.required ? 'This field is required.' : 'This field is optional.'}`;
+      
+      try {
+        // Use the LLM to generate a helpful response about this field
+        const llmResponse = await generateLLMResponse(
+          `The user is asking about the form field: ${fieldKey}. Their exact question is: "${message}"`,
+          fieldContext,
+          true // Mark as form field question
+        );
+        return llmResponse;
+      } catch (error) {
+        console.error('Error getting LLM response for field guidance:', error);
+        // Fallback to static guidance if LLM fails
+        let response = fieldInfo.guidance;
+        if (fieldInfo.example) {
+          response += `\n\nExample: ${fieldInfo.example}`;
+        }
+        response += fieldInfo.required ? "\n\nThis field is required." : "\n\nThis field is optional.";
+        return response;
+      }
     }
     
-    // Check for quick responses first
+    // Handle trial-specific questions if context is "trial" and not a form field question
+    if (context === "trial") {
+      return await getTrialInformation(lowerMessage);
+    }
+    
+    // Check for consent form guidance requests
+    if (lowerMessage.includes('consent form') && (lowerMessage.includes('fill') || lowerMessage.includes('complete') || lowerMessage.includes('what to put'))) {
+      return `I can help you with the consent form! Here's what you'll need to provide:
+
+1. **Personal Information**
+   - Full Name (as on ID)
+   - Date of Birth
+   - Contact Information
+   - Emergency Contact Details
+
+2. **Medical Information**
+   - Current Health Conditions
+   - Allergies (medications, foods, environmental)
+   - Current Medications & Supplements
+   - Medical History
+
+3. **Trial Details**
+   - Understanding of the study
+   - Acknowledgment of risks/benefits
+   - Consent for participation
+   - Signature and Date
+
+For specific fields, you can ask me like:
+- "How to fill in allergies?"
+- "What to put in current medications?"
+- "What health conditions should I list?"
+
+You can also visit the Consent Form page to start filling it out directly.`;
+    }
+
+    // Check for quick responses
     for (const [question, answer] of Object.entries(quickResponses)) {
       if (lowerMessage.includes(question)) {
         return answer;
+      }
+    }
+    
+    // Direct field guidance for common questions
+    const fieldGuidance = [
+      {
+        keywords: ['allerg', 'allergi', 'sensitivi', 'intoleran'],
+        field: 'allergies',
+        helpText: `Please list any known allergies you have, including:
+        
+• Medications (e.g., penicillin, ibuprofen)
+• Foods (e.g., peanuts, shellfish)
+• Environmental factors (e.g., pollen, dust mites, pet dander)
+• Materials (e.g., latex, adhesive)
+
+For each allergy, please include:
+- The specific allergen
+- Type of reaction (e.g., rash, swelling, difficulty breathing)
+- Severity (mild, moderate, severe)
+- When the reaction last occurred
+
+Example: 
+- Penicillin (severe reaction - anaphylaxis, last occurred 2015)
+- Peanuts (moderate - hives and swelling, last occurred 2020)
+- Latex (mild - skin irritation, last occurred 2022)
+
+If you have no known allergies, please write: 'None' or 'No known allergies'`
+      },
+      {
+        keywords: ['health', 'medical', 'condition', 'illness', 'diagnos', 'disease'],
+        field: 'healthConditions',
+        helpText: `Please list any current or past significant medical conditions. Be specific and include:
+        
+• The name of the condition
+• When it was diagnosed
+• Current status (active/controlled/resolved)
+• Any relevant details about severity or management
+
+Examples of what to include:
+- Chronic conditions (diabetes, hypertension, asthma, etc.)
+- Major illnesses or hospitalizations
+- Surgeries or major procedures
+- Mental health conditions
+- Autoimmune disorders
+- Cancer history
+
+Example 1: 
+- Type 2 diabetes (diagnosed 2018, well-controlled with medication and diet)
+- Hypertension (mild, managed with medication since 2020)
+- Asthma (mild, uses inhaler as needed)
+
+Example 2:
+- No significant medical conditions`
+      },
+      {
+        keywords: ['medication', 'meds', 'prescription', 'drug', 'pill'],
+        field: 'currentMedications',
+        helpText: `Please list all medications and supplements you are currently taking, including:
+        
+• Prescription medications
+• Over-the-counter drugs
+• Vitamins and supplements
+• Herbal remedies
+• Birth control
+
+For each medication, please include:
+- Name of medication (brand or generic)
+- Dosage (e.g., 50mg, 1 tablet)
+- Frequency (e.g., once daily, twice a day)
+- Reason for taking (if not obvious)
+- When you started taking it (month/year)
+
+Example 1:
+- Metformin 500mg, twice daily for Type 2 diabetes (since 2020)
+- Lisinopril 10mg, once daily for blood pressure (since 2021)
+- Vitamin D3 1000IU, once daily (since 2022)
+- Ibuprofen 200mg, as needed for headaches
+
+Example 2:
+- No current medications`
+      }
+    ];
+
+    // Check for direct field guidance questions
+    if (lowerMessage.includes('what to fill') || 
+        lowerMessage.includes('what should i put') || 
+        lowerMessage.includes('how to fill') ||
+        lowerMessage.includes('what goes in') ||
+        lowerMessage.includes('what do i put')) {
+      
+      for (const {keywords, helpText} of fieldGuidance) {
+        if (keywords.some(keyword => lowerMessage.includes(keyword))) {
+          return helpText;
+        }
       }
     }
     
@@ -238,45 +428,58 @@ Please provide a helpful response to the user's question:`;
     }
   };
 
-  const sendMessage = async (messageText = chatInput) => {
-    if (!messageText.trim()) return;
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
 
-    const userMessage = { id: Date.now(), text: messageText, isBot: false };
-    setChatMessages(prev => [...prev, userMessage]);
+    const userMessage = chatInput.trim();
     setChatInput("");
-    setIsTyping(true);
+    await sendMessage(userMessage);
+  };
+
+  // Unified message sender used by text input, quick questions, and voice input
+  const sendMessage = async (rawMessage) => {
+    const message = (rawMessage || "").trim();
+    if (!message) return;
+
+    // Add user message
+    setChatMessages((prev) => [...prev, { id: Date.now(), text: message, isBot: false }]);
+
+    // Show typing indicator
+    setChatMessages((prev) => [...prev, { id: Date.now() + 1, text: "...", isBot: true, isTyping: true }]);
 
     try {
-      let botResponse;
-      
+      let response;
       if (context === "trial") {
-        // For trial context, use async LLM-based response
-        botResponse = await getTrialInformation(messageText);
+        response = await getTrialInformation(message);
       } else {
-        // For consent form context, use synchronous response
-        botResponse = getConsentFormGuidance(messageText, fields);
+        response = await generateLLMResponse(message, "");
       }
-      
-      const botMessage = { id: Date.now() + 1, text: botResponse, isBot: true };
-      setChatMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-      
+
+      // Remove typing indicator and add bot response
+      setChatMessages((prev) =>
+        prev
+          .filter((msg) => !msg.isTyping)
+          .concat([{ id: Date.now() + 2, text: response, isBot: true }])
+      );
+
       if (speakReplies) {
-        speak(botResponse);
+        try { await playVoiceFromText(response); } catch (_) { /* noop fallback handled inside */ }
       }
     } catch (error) {
-      console.error('Message processing error:', error);
-      const errorMessage = { 
-        id: Date.now() + 1, 
-        text: "I'm having trouble processing your question right now. Please try again or contact support if the issue persists.", 
-        isBot: true 
-      };
-      setChatMessages(prev => [...prev, errorMessage]);
-      setIsTyping(false);
+      console.error("Error getting response:", error);
+      setChatMessages((prev) =>
+        prev
+          .filter((msg) => !msg.isTyping)
+          .concat([
+            {
+              id: Date.now() + 2,
+              text: "Sorry, I'm having trouble connecting to the server. Please try again later.",
+              isBot: true,
+            },
+          ])
+      );
     }
-    
-    if (!voiceInput) setChatInput("");
-    if (voiceInput) setIsChatOpen(true);
   };
 
   const playVoiceFromText = async (text) => {
@@ -558,14 +761,14 @@ Please provide a helpful response to the user's question:`;
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        sendMessage();
+                        handleSendMessage(e);
                       }
                     }}
                     className="flex-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   />
                   
                   <Button
-                    onClick={() => sendMessage()}
+                    onClick={handleSendMessage}
                     size="icon"
                     className="shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all duration-200 hover:scale-105 shadow-md"
                   >

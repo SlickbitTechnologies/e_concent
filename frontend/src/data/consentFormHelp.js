@@ -43,20 +43,61 @@ export const consentFormHelp = {
   },
 
   // Medical History Section
+  
   healthConditions: {
     section: "Medical History",
-    guidance: "List any current or past significant medical conditions, chronic illnesses, or ongoing health issues. Include conditions like diabetes, heart disease, mental health conditions, etc. If none, write 'None' or 'No significant medical conditions'.",
-    example: "Example: Type 2 diabetes, hypertension, anxiety disorder"
+    guidance: `Please list any current or past significant medical conditions. Be as specific as possible by including:
+    - The name of the condition
+    - When it was diagnosed
+    - Current status (active/controlled/resolved)
+    - Any relevant details about severity or management
+    
+    Examples of what to include:
+    - Chronic conditions (diabetes, hypertension, asthma, etc.)
+    - Major illnesses or hospitalizations
+    - Surgeries or major procedures
+    - Mental health conditions
+    - Autoimmune disorders
+    - Cancer history
+    
+    If you have no significant medical history, please write: 'None' or 'No significant medical conditions'`,
+    example: "Example 1: Type 2 diabetes diagnosed in 2018, well-controlled with medication and diet. Hypertension managed with medication since 2020. No other significant conditions.\n\nExample 2: Asthma (mild, uses inhaler as needed). Seasonal allergies (pollen). No other medical conditions."
   },
   allergies: {
     section: "Medical History", 
-    guidance: "List all known allergies including medications, foods, environmental allergens, or materials. Include the type of reaction if known. If no allergies, write 'None' or 'No known allergies'.",
-    example: "Example: Penicillin (rash), peanuts (anaphylaxis), seasonal pollen"
+    guidance: `Please list all known allergies including:
+    - Medications (e.g., antibiotics, pain relievers)
+    - Foods
+    - Environmental allergens (e.g., pollen, dust mites)
+    - Materials (e.g., latex, adhesive)
+    
+    For each allergy, please include:
+    - The specific allergen
+    - Type of reaction (e.g., rash, difficulty breathing, swelling)
+    - Severity (mild, moderate, severe)
+    - When the reaction last occurred
+    
+    If you have no known allergies, please write: 'None' or 'No known allergies'`,
+    example: "Example 1: Penicillin (severe reaction - anaphylaxis, last occurred 2015), Peanuts (moderate - hives and swelling, last occurred 2020), Latex (mild - skin irritation, last occurred 2022)\n\nExample 2: No known allergies"
   },
   currentMedications: {
     section: "Medical History",
-    guidance: "List all medications you currently take including prescription drugs, over-the-counter medications, vitamins, and supplements. Include dosages if known. If none, write 'None'.",
-    example: "Example: Metformin 500mg twice daily, Vitamin D 1000IU daily"
+    guidance: `Please list all medications and supplements you are currently taking, including:
+    - Prescription medications
+    - Over-the-counter drugs
+    - Vitamins
+    - Herbal supplements
+    - Birth control
+    
+    For each medication, please include:
+    - Name of medication (brand or generic)
+    - Dosage (e.g., 50mg, 1 tablet)
+    - Frequency (e.g., once daily, twice a day)
+    - Reason for taking (if not obvious)
+    - When you started taking it (month/year)
+    
+    If you are not taking any medications, please write: 'None'`,
+    example: "Example 1: \n- Metformin 500mg, twice daily for Type 2 diabetes (since 2020)\n- Lisinopril 10mg, once daily for blood pressure (since 2021)\n- Vitamin D3 1000IU, once daily (since 2022)\n- Ibuprofen 200mg, as needed for headaches\n\nExample 2: No current medications"
   },
   lastTetanusShot: {
     section: "Medical History",
